@@ -1,2 +1,7 @@
 # tf-remote-state-find
-Find directories where changed terraform_remote_state data source is used
+
+Find directories where changed terraform_remote_state data source is used.
+
+## LICENSE
+
+[MIT](LICENSE)

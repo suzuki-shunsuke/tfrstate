@@ -50,38 +50,60 @@ type Dir struct {
 
 func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
 	// parse plan file and extract changed outputs
-	planFile := &PlanFile{}
-	if err := readPlanFile(afs, param.PlanFile, planFile); err != nil {
-		return fmt.Errorf("read a plan file: %w", err)
+	if param.PlanFile == "" {
+		if param.Bucket == "" || param.Key == "" {
+			return errors.New("plan-json or s3-bucket and s3-key must be set")
+		}
+	} else {
+		if param.Bucket != "" {
+			return errors.New("plan-json and s3-bucket can't be used at the same time")
+		}
+		if param.Key != "" {
+			return errors.New("plan-json and s3-key can't be used at the same time")
+		}
 	}
-	excludeCreatedOutputs(planFile)
-	if len(planFile.OutputChanges) == 0 {
-		logE.Info("no output changes")
-		return nil
+	changedOutputs := param.Outputs
+	if param.PlanFile != "" {
+		planFile := &PlanFile{}
+		if err := readPlanFile(afs, param.PlanFile, planFile); err != nil {
+			return fmt.Errorf("read a plan file: %w", err)
+		}
+		excludeCreatedOutputs(planFile)
+		if len(planFile.OutputChanges) == 0 {
+			logE.Info("no output changes")
+			return nil
+		}
+		changedOutputs = slices.Sorted(maps.Keys(planFile.OutputChanges))
 	}
-	changedOutputs := maps.Keys(planFile.OutputChanges)
 
-	// parse HCLs in dir and extract backend configurations
-	matchFiles, err := afero.Glob(afs, filepath.Join(param.Dir, "*.tf"))
-	if err != nil {
-		return fmt.Errorf("glob *.tf to get Backend configuration: %w", err)
+	bucket := &Bucket{
+		Bucket: param.Bucket,
+		Key:    param.Key,
 	}
-	bucket := &Bucket{}
-	for _, matchFile := range matchFiles {
-		b, err := afero.ReadFile(afs, matchFile)
+
+	if param.PlanFile != "" { //nolint:nestif
+		// parse HCLs in dir and extract backend configurations
+		matchFiles, err := afero.Glob(afs, filepath.Join(param.Dir, "*.tf"))
 		if err != nil {
-			return fmt.Errorf("read a file: %w", err)
+			return fmt.Errorf("glob *.tf to get Backend configuration: %w", err)
 		}
-		s := string(b)
-		if !strings.Contains(s, "backend") {
-			continue
-		}
-		if f, err := extractBackend(b, matchFile, bucket); err != nil {
-			return fmt.Errorf("get backend configuration: %w", err)
-		} else if f {
-			break
+		for _, matchFile := range matchFiles {
+			b, err := afero.ReadFile(afs, matchFile)
+			if err != nil {
+				return fmt.Errorf("read a file: %w", err)
+			}
+			s := string(b)
+			if !strings.Contains(s, "backend") {
+				continue
+			}
+			if f, err := extractBackend(b, matchFile, bucket); err != nil {
+				return fmt.Errorf("get backend configuration: %w", err)
+			} else if f {
+				break
+			}
 		}
 	}
+
 	if bucket.Key == "" || bucket.Bucket == "" {
 		logE.Info("no s3 backend configuration")
 		return nil
@@ -157,7 +179,7 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 				if !strings.Contains(file.Content, "data.terraform_remote_state."+state.Name+".outputs.") {
 					continue
 				}
-				for outputName := range changedOutputs {
+				for _, outputName := range changedOutputs {
 					if !strings.Contains(file.Content, "data.terraform_remote_state."+state.Name+".outputs."+outputName) {
 						continue
 					}
