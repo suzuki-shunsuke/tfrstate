@@ -29,7 +29,7 @@ type FileWithBackend struct {
 
 type TerraformBlock struct{}
 
-func Run(ctx context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error {
+func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
 	// parse plan file and extract changed outputs
 	planFile := &PlanFile{}
 	if err := readPlanFile(afs, param.PlanFile, planFile); err != nil {
@@ -70,21 +70,11 @@ func Run(ctx context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) er
 		"bucket": bucket.Bucket,
 		"key":    bucket.Key,
 	}).Info("S3 buckend configuration")
-	ignorePatterns := []string{".terraform", ".git", ".github", "vendor", "node_modules"}
 
 	// find HCLs in root directories and list directories where changed outputs are used
-	tfFiles := []string{}
-	if err := doublestar.GlobWalk(afero.NewIOFS(afs), "**/*.tf", func(path string, d fs.DirEntry) error {
-		if err := ignorePath(path, ignorePatterns); err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		tfFiles = append(tfFiles, path)
-		return nil
-	}, doublestar.WithNoFollow()); err != nil {
-		return fmt.Errorf("search files: %w", err)
+	tfFiles, err := findTFFiles(afs)
+	if err != nil {
+		return err
 	}
 	logE.WithFields(logrus.Fields{
 		"num_of_files": len(tfFiles),
@@ -108,9 +98,27 @@ func Run(ctx context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) er
 		states = append(states, remoteStates...)
 	}
 	for _, state := range states {
-		fmt.Println(state.Name, state.File)
+		fmt.Println(state.Name, state.File) //nolint:forbidigo
 	}
 	return nil
+}
+
+func findTFFiles(afs afero.Fs) ([]string, error) {
+	tfFiles := []string{}
+	ignorePatterns := []string{".terraform", ".git", ".github", "vendor", "node_modules"}
+	if err := doublestar.GlobWalk(afero.NewIOFS(afs), "**/*.tf", func(path string, d fs.DirEntry) error {
+		if err := ignorePath(path, ignorePatterns); err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		tfFiles = append(tfFiles, path)
+		return nil
+	}, doublestar.WithNoFollow()); err != nil {
+		return nil, fmt.Errorf("search files: %w", err)
+	}
+	return tfFiles, nil
 }
 
 func ignorePath(path string, ignorePatterns []string) error {
@@ -164,6 +172,36 @@ type Bucket struct {
 	Key    string
 }
 
+func handleTerraformBlock(block *hclsyntax.Block, bucket *Bucket) (bool, error) {
+	if block.Type != "terraform" {
+		return false, nil
+	}
+	for _, backend := range block.Body.Blocks {
+		if backend.Type != "backend" {
+			continue
+		}
+		if len(backend.Labels) != 1 || backend.Labels[0] != "s3" {
+			return false, nil
+		}
+		if key, ok := backend.Body.Attributes["key"]; ok {
+			val, diag := key.Expr.Value(nil)
+			if diag.HasErrors() {
+				return false, diag
+			}
+			bucket.Key = val.AsString()
+		}
+		if b, ok := backend.Body.Attributes["bucket"]; ok {
+			val, diag := b.Expr.Value(nil)
+			if diag.HasErrors() {
+				return false, diag
+			}
+			bucket.Bucket = val.AsString()
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
 func extractBackend(src []byte, filePath string, bucket *Bucket) (bool, error) {
 	file, diags := hclsyntax.ParseConfig(src, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 	if diags.HasErrors() {
@@ -174,31 +212,8 @@ func extractBackend(src []byte, filePath string, bucket *Bucket) (bool, error) {
 		return false, errors.New("convert file body to body type")
 	}
 	for _, block := range body.Blocks {
-		if block.Type != "terraform" {
-			continue
-		}
-		for _, backend := range block.Body.Blocks {
-			if backend.Type != "backend" {
-				continue
-			}
-			if len(backend.Labels) != 1 || backend.Labels[0] != "s3" {
-				return false, nil
-			}
-			if key, ok := backend.Body.Attributes["key"]; ok {
-				val, diag := key.Expr.Value(nil)
-				if diag.HasErrors() {
-					return false, diag
-				}
-				bucket.Key = val.AsString()
-			}
-			if b, ok := backend.Body.Attributes["bucket"]; ok {
-				val, diag := b.Expr.Value(nil)
-				if diag.HasErrors() {
-					return false, diag
-				}
-				bucket.Bucket = val.AsString()
-			}
-			return true, nil
+		if f, err := handleTerraformBlock(block, bucket); err != nil || f {
+			return f, err
 		}
 	}
 	return false, nil
@@ -207,6 +222,52 @@ func extractBackend(src []byte, filePath string, bucket *Bucket) (bool, error) {
 type RemoteState struct {
 	Name string
 	File string
+}
+
+func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error) { //nolint:cyclop
+	if block.Type != "data" {
+		return nil, nil //nolint:nilnil
+	}
+	if len(block.Labels) != 2 || block.Labels[0] != "terraform_remote_state" {
+		return nil, nil //nolint:nilnil
+	}
+	logE.Info("terraform_remote_state is found")
+	backendAttr, ok := block.Body.Attributes["backend"]
+	if !ok {
+		logE.Warn("backend attribute is not found")
+		return nil, nil //nolint:nilnil
+	}
+	val, diag := backendAttr.Expr.Value(nil)
+	if diag.HasErrors() {
+		return nil, diag
+	}
+	backendType := val.AsString()
+	if backendType != "s3" {
+		logE.Debug("backend type isn't s3")
+		return nil, nil //nolint:nilnil
+	}
+	bucket := &Bucket{}
+	configAttr, ok := block.Body.Attributes["config"]
+	if !ok {
+		logE.Warn("config attribute is not found")
+		return nil, nil //nolint:nilnil
+	}
+	logE.Debug("config attribute is found")
+
+	configVal, diag := configAttr.Expr.Value(nil)
+	if diag.HasErrors() {
+		return nil, diag
+	}
+
+	sv := ctyjson.SimpleJSONValue{Value: configVal}
+	b, err := json.Marshal(sv)
+	if err != nil {
+		return nil, fmt.Errorf("marshal config attribute as JSON: %w", err)
+	}
+	if err := json.Unmarshal(b, bucket); err != nil {
+		return nil, fmt.Errorf("unmarshal config attribute as JSON: %w", err)
+	}
+	return bucket, nil
 }
 
 func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backend *Bucket) ([]*RemoteState, error) {
@@ -220,49 +281,14 @@ func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backen
 	}
 	states := []*RemoteState{}
 	for _, block := range body.Blocks {
-		if block.Type != "data" {
-			continue
-		}
-		if len(block.Labels) != 2 || block.Labels[0] != "terraform_remote_state" {
-			return nil, nil
-		}
-		logE.Info("terraform_remote_state is found")
-		name := block.Labels[1]
-		backendAttr, ok := block.Body.Attributes["backend"]
-		if !ok {
-			logE.Warn("backend attribute is not found")
-			continue
-		}
-		val, diag := backendAttr.Expr.Value(nil)
-		if diag.HasErrors() {
-			return nil, diag
-		}
-		backendType := val.AsString()
-		if backendType != "s3" {
-			logE.Debug("backend type isn't s3")
-			continue
-		}
-		bucket := &Bucket{}
-		configAttr, ok := block.Body.Attributes["config"]
-		if !ok {
-			logE.Warn("config attribute is not found")
-			continue
-		}
-		logE.Debug("config attribute is found")
-
-		configVal, diag := configAttr.Expr.Value(nil)
-		if diag.HasErrors() {
-			return nil, diag
-		}
-
-		sv := ctyjson.SimpleJSONValue{Value: configVal}
-		b, err := json.Marshal(sv)
+		bucket, err := handleDataBlock(logE, block)
 		if err != nil {
 			return nil, err
 		}
-		if err := json.Unmarshal(b, bucket); err != nil {
-			return nil, err
+		if bucket == nil {
+			continue
 		}
+		name := block.Labels[1]
 		if bucket.Key != backend.Key || bucket.Bucket != backend.Bucket {
 			break
 		}

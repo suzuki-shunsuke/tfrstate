@@ -7,9 +7,9 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
+	"github.com/suzuki-shunsuke/logrus-error/logerr"
 	"github.com/suzuki-shunsuke/tf-remote-state-find/pkg/cli"
 	"github.com/suzuki-shunsuke/tf-remote-state-find/pkg/log"
-	"github.com/suzuki-shunsuke/logrus-error/logerr"
 )
 
 var (
