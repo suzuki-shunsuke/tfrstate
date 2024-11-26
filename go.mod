@@ -5,7 +5,6 @@ go 1.23.3
 require (
 	github.com/bmatcuk/doublestar/v4 v4.7.1
 	github.com/hashicorp/hcl/v2 v2.23.0
-	github.com/k0kubun/pp/v3 v3.3.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.11.0
