@@ -1,4 +1,4 @@
-module github.com/suzuki-shunsuke/tf-remote-state-find
+module github.com/suzuki-shunsuke/tfrstate
 
 go 1.23.3
 

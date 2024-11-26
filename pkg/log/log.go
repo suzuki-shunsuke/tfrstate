@@ -16,7 +16,7 @@ func New(version string) *logrus.Entry {
 	}
 	return logger.WithFields(logrus.Fields{
 		"version": version,
-		"program": "tf-remote-state-find",
+		"program": "tfrstate",
 		"env":     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	})
 }

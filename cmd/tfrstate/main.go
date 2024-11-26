@@ -8,8 +8,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/suzuki-shunsuke/logrus-error/logerr"
-	"github.com/suzuki-shunsuke/tf-remote-state-find/pkg/cli"
-	"github.com/suzuki-shunsuke/tf-remote-state-find/pkg/log"
+	"github.com/suzuki-shunsuke/tfrstate/pkg/cli"
+	"github.com/suzuki-shunsuke/tfrstate/pkg/log"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 func main() {
 	logE := log.New(version)
 	if err := core(logE); err != nil {
-		logerr.WithError(logE, err).Fatal("tf-remote-state-find failed")
+		logerr.WithError(logE, err).Fatal("tfrstate failed")
 	}
 }
 

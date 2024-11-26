@@ -39,9 +39,9 @@ tasks:
       - name: target
   - name: install
     short: i
-    description: Build and install tf-remote-state-find
-    usage: Build and install tf-remote-state-find by "go install" command
-    script: go install ./cmd/tf-remote-state-find
+    description: Build and install tfrstate
+    usage: Build and install tfrstate by "go install" command
+    script: go install ./cmd/tfrstate
   - name: fmt
     description: Format GO codes
     usage: Format GO codes

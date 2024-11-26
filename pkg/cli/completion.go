@@ -25,15 +25,15 @@ e.g.
 
 .bash_profile
 
-source <(tf-remote-state-find completion bash)
+source <(tfrstate completion bash)
 
 .zprofile
 
-source <(tf-remote-state-find completion zsh)
+source <(tfrstate completion zsh)
 
 fish
 
-tf-remote-state-find completion fish > ~/.config/fish/completions/tf-remote-state-find.fish
+tfrstate completion fish > ~/.config/fish/completions/tfrstate.fish
 `,
 		Subcommands: []*cli.Command{
 			{
@@ -74,16 +74,16 @@ _cli_bash_autocomplete() {
   fi
 }
 
-complete -o bashdefault -o default -o nospace -F _cli_bash_autocomplete tf-remote-state-find`)
+complete -o bashdefault -o default -o nospace -F _cli_bash_autocomplete tfrstate`)
 	return nil
 }
 
 func (cc *completionCommand) zshCompletionAction(*cli.Context) error {
 	// https://github.com/urfave/cli/blob/main/autocomplete/zsh_autocomplete
 	// https://github.com/urfave/cli/blob/947f9894eef4725a1c15ed75459907b52dde7616/autocomplete/zsh_autocomplete
-	fmt.Fprintln(cc.stdout, `#compdef tf-remote-state-find
+	fmt.Fprintln(cc.stdout, `#compdef tfrstate
 
-_tf-remote-state-find() {
+_tfrstate() {
   local -a opts
   local cur
   cur=${words[-1]}
@@ -100,10 +100,10 @@ _tf-remote-state-find() {
   fi
 }
 
-if [ "$funcstack[1]" = "_tf-remote-state-find" ]; then
-  _tf-remote-state-find "$@"
+if [ "$funcstack[1]" = "_tfrstate" ]; then
+  _tfrstate "$@"
 else
-  compdef _tf-remote-state-find tf-remote-state-find
+  compdef _tfrstate tfrstate
 fi`)
 	return nil
 }

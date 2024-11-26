@@ -3,8 +3,8 @@ package cli
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.com/suzuki-shunsuke/tf-remote-state-find/pkg/controller/run"
-	"github.com/suzuki-shunsuke/tf-remote-state-find/pkg/log"
+	"github.com/suzuki-shunsuke/tfrstate/pkg/controller/run"
+	"github.com/suzuki-shunsuke/tfrstate/pkg/log"
 	"github.com/urfave/cli/v2"
 )
 
