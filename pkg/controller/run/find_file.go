@@ -3,16 +3,17 @@ package run
 import (
 	"fmt"
 	"io/fs"
+	"path/filepath"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/spf13/afero"
 )
 
-func findTFFiles(afs afero.Fs) ([]string, error) {
+func findTFFiles(afs afero.Fs, rootDir string) ([]string, error) {
 	// Find **/*.tf
 	tfFiles := []string{}
 	ignorePatterns := []string{".terraform", ".git", ".github", "vendor", "node_modules"}
-	if err := doublestar.GlobWalk(afero.NewIOFS(afs), "**/*.tf", func(path string, d fs.DirEntry) error {
+	if err := doublestar.GlobWalk(afero.NewIOFS(afs), filepath.Join(rootDir, "**/*.tf"), func(path string, d fs.DirEntry) error {
 		if err := ignorePath(path, ignorePatterns); err != nil {
 			return err
 		}

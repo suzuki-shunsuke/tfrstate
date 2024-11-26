@@ -82,7 +82,7 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	}).Info("S3 buckend configuration")
 
 	// find HCLs in root directories and list directories where changed outputs are used
-	tfFiles, err := findTFFiles(afs)
+	tfFiles, err := findTFFiles(afs, param.Root)
 	if err != nil {
 		return err
 	}
