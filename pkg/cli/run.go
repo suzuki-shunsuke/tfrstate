@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/suzuki-shunsuke/tfrstate/pkg/controller/run"
@@ -53,5 +55,6 @@ func (rc *runCommand) action(c *cli.Context) error {
 		Key:      c.String("s3-key"),
 		Bucket:   c.String("s3-bucket"),
 		Outputs:  c.StringSlice("output"),
+		Stdout:   os.Stdout,
 	})
 }

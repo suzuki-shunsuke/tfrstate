@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -28,6 +28,7 @@ type Param struct {
 	Bucket   string
 	Key      string
 	Outputs  []string
+	Stdout   io.Writer
 }
 
 type FileWithBackend struct {
@@ -48,8 +49,7 @@ type Dir struct {
 	States []*RemoteState
 }
 
-func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
-	// parse plan file and extract changed outputs
+func validateParam(param *Param) error {
 	if param.PlanFile == "" {
 		if param.Bucket == "" || param.Key == "" {
 			return errors.New("plan-json or s3-bucket and s3-key must be set")
@@ -62,18 +62,34 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 			return errors.New("plan-json and s3-key can't be used at the same time")
 		}
 	}
+	return nil
+}
+
+func extractChangedOutputs(afs afero.Fs, path string) ([]string, error) {
+	planFile := &PlanFile{}
+	if err := readPlanFile(afs, path, planFile); err != nil {
+		return nil, fmt.Errorf("read a plan file: %w", err)
+	}
+	excludeCreatedOutputs(planFile)
+	return slices.Sorted(maps.Keys(planFile.OutputChanges)), nil
+}
+
+func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
+	// parse plan file and extract changed outputs
+	if err := validateParam(param); err != nil {
+		return err
+	}
 	changedOutputs := param.Outputs
 	if param.PlanFile != "" {
-		planFile := &PlanFile{}
-		if err := readPlanFile(afs, param.PlanFile, planFile); err != nil {
-			return fmt.Errorf("read a plan file: %w", err)
+		arr, err := extractChangedOutputs(afs, param.PlanFile)
+		if err != nil {
+			return err
 		}
-		excludeCreatedOutputs(planFile)
-		if len(planFile.OutputChanges) == 0 {
+		if len(arr) == 0 {
 			logE.Info("no output changes")
 			return nil
 		}
-		changedOutputs = slices.Sorted(maps.Keys(planFile.OutputChanges))
+		changedOutputs = arr
 	}
 
 	bucket := &Bucket{
@@ -81,26 +97,10 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 		Key:    param.Key,
 	}
 
-	if param.PlanFile != "" { //nolint:nestif
+	if param.PlanFile != "" {
 		// parse HCLs in dir and extract backend configurations
-		matchFiles, err := afero.Glob(afs, filepath.Join(param.Dir, "*.tf"))
-		if err != nil {
-			return fmt.Errorf("glob *.tf to get Backend configuration: %w", err)
-		}
-		for _, matchFile := range matchFiles {
-			b, err := afero.ReadFile(afs, matchFile)
-			if err != nil {
-				return fmt.Errorf("read a file: %w", err)
-			}
-			s := string(b)
-			if !strings.Contains(s, "backend") {
-				continue
-			}
-			if f, err := extractBackend(b, matchFile, bucket); err != nil {
-				return fmt.Errorf("get backend configuration: %w", err)
-			} else if f {
-				break
-			}
+		if err := findBackendConfig(afs, param.Dir, bucket); err != nil {
+			return err
 		}
 	}
 
@@ -121,38 +121,13 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	logE.WithFields(logrus.Fields{
 		"num_of_files": len(tfFiles),
 	}).Info("Found *.tf files")
-	/*
-		dir: {
-			files: [path, ...],
-			states: [name, ...]
-		}
-	*/
 	dirs := map[string]*Dir{}
-	for _, matchFile := range tfFiles {
-		b, err := afero.ReadFile(afs, matchFile)
-		if err != nil {
-			return fmt.Errorf("read a file: %w", logerr.WithFields(err, logrus.Fields{
-				"file": matchFile,
-			}))
-		}
-		s := string(b)
-		if !strings.Contains(s, "terraform_remote_state") {
-			continue
-		}
-		dirPath := filepath.Dir(matchFile)
-		dir, ok := dirs[dirPath]
-		if !ok {
-			dir = &Dir{
-				Path: dirPath,
-			}
-		}
-		dir.Files = append(dir.Files, &File{
-			Path:    matchFile,
-			Content: s,
-			Byte:    b,
-		})
-		dirs[dirPath] = dir
+	// Find files including a string "terraform_remote_state"
+	if err := filterFilesWithRemoteState(afs, tfFiles, dirs); err != nil {
+		return err
 	}
+
+	// Find terraform_remote_state data sources.
 	for _, dir := range dirs {
 		for _, file := range dir.Files {
 			logE := logE.WithField("file", file.Path)
@@ -166,10 +141,49 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 			dir.States = append(dir.States, remoteStates...)
 		}
 	}
+
 	// Find attributes where changed outputs are used
 	// data.terraform_remote_state.<name>.outputs.<output_name>
 	// directory -> file -> changed outputs
 	changed := map[string]map[string]map[string]struct{}{}
+	findCaller(dirs, changedOutputs, changed)
+	// Format the result to output as JSON
+	changes := toChanges(changed)
+	// Output the result
+	if err := output(changes, param.Stdout); err != nil {
+		return err
+	}
+	return nil
+}
+
+func output(changes []*Change, stdout io.Writer) error {
+	encoder := json.NewEncoder(stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(changes); err != nil {
+		return fmt.Errorf("encode the result as JSON: %w", err)
+	}
+	return nil
+}
+
+func toChanges(changed map[string]map[string]map[string]struct{}) []*Change {
+	changes := make([]*Change, 0, len(changed))
+	for dir, m := range changed {
+		files := make([]*ChangedFile, 0, len(m))
+		for file, outputs := range m {
+			files = append(files, &ChangedFile{
+				Path:    file,
+				Outputs: slices.Sorted(maps.Keys(outputs)),
+			})
+		}
+		changes = append(changes, &Change{
+			Dir:   dir,
+			Files: files,
+		})
+	}
+	return changes
+}
+
+func findCaller(dirs map[string]*Dir, changedOutputs []string, changed map[string]map[string]map[string]struct{}) { //nolint:gocognit
 	for _, dir := range dirs {
 		for _, file := range dir.Files {
 			if !strings.Contains(file.Content, "data.terraform_remote_state.") {
@@ -199,38 +213,58 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 			}
 		}
 	}
-	// convert map[string]struct{} to []string
-	/*
-		[
-		  {
-			dir: "",
-			files: [
-				{
-					path: "",
-					outputs: []
-				}
-			]
-		  }
-		]
-	*/
-	changes := make([]*Change, 0, len(changed))
-	for dir, m := range changed {
-		files := make([]*ChangedFile, 0, len(m))
-		for file, outputs := range m {
-			files = append(files, &ChangedFile{
-				Path:    file,
-				Outputs: slices.Sorted(maps.Keys(outputs)),
-			})
+}
+
+func filterFilesWithRemoteState(afs afero.Fs, tfFiles []string, dirs map[string]*Dir) error {
+	for _, matchFile := range tfFiles {
+		// Find files including a string "terraform_remote_state"
+		b, err := afero.ReadFile(afs, matchFile)
+		if err != nil {
+			return fmt.Errorf("read a file: %w", logerr.WithFields(err, logrus.Fields{
+				"file": matchFile,
+			}))
 		}
-		changes = append(changes, &Change{
-			Dir:   dir,
-			Files: files,
+		s := string(b)
+		if !strings.Contains(s, "terraform_remote_state") {
+			continue
+		}
+		dirPath := filepath.Dir(matchFile)
+		dir, ok := dirs[dirPath]
+		if !ok {
+			dir = &Dir{
+				Path: dirPath,
+			}
+		}
+		dir.Files = append(dir.Files, &File{
+			Path:    matchFile,
+			Content: s,
+			Byte:    b,
 		})
+		dirs[dirPath] = dir
 	}
-	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(changes); err != nil {
-		return err
+	return nil
+}
+
+func findBackendConfig(afs afero.Fs, dir string, bucket *Bucket) error {
+	// parse HCLs in dir and extract backend configurations
+	matchFiles, err := afero.Glob(afs, filepath.Join(dir, "*.tf"))
+	if err != nil {
+		return fmt.Errorf("glob *.tf to get Backend configuration: %w", err)
+	}
+	for _, matchFile := range matchFiles {
+		b, err := afero.ReadFile(afs, matchFile)
+		if err != nil {
+			return fmt.Errorf("read a file: %w", err)
+		}
+		s := string(b)
+		if !strings.Contains(s, "backend") {
+			continue
+		}
+		if f, err := extractBackend(b, matchFile, bucket); err != nil {
+			return fmt.Errorf("get backend configuration: %w", err)
+		} else if f {
+			break
+		}
 	}
 	return nil
 }
