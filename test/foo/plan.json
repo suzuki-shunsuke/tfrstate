@@ -1,0 +1,128 @@
+{
+    "format_version": "1.2",
+    "terraform_version": "1.9.8",
+    "planned_values": {
+        "outputs": {
+            "foo": {
+                "sensitive": false,
+                "type": "string",
+                "value": "bar"
+            }
+        },
+        "root_module": {
+            "resources": [
+                {
+                    "address": "null_resource.foo",
+                    "mode": "managed",
+                    "type": "null_resource",
+                    "name": "foo",
+                    "provider_name": "registry.terraform.io/hashicorp/null",
+                    "schema_version": 0,
+                    "values": {
+                        "id": "8378162001816571199",
+                        "triggers": null
+                    },
+                    "sensitive_values": {}
+                }
+            ]
+        }
+    },
+    "resource_changes": [
+        {
+            "address": "null_resource.foo",
+            "mode": "managed",
+            "type": "null_resource",
+            "name": "foo",
+            "provider_name": "registry.terraform.io/hashicorp/null",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "id": "8378162001816571199",
+                    "triggers": null
+                },
+                "after": {
+                    "id": "8378162001816571199",
+                    "triggers": null
+                },
+                "after_unknown": {},
+                "before_sensitive": {},
+                "after_sensitive": {}
+            }
+        }
+    ],
+    "output_changes": {
+        "foo": {
+            "actions": [
+                "update"
+            ],
+            "before": "foo",
+            "after": "bar",
+            "after_unknown": false,
+            "before_sensitive": false,
+            "after_sensitive": false
+        }
+    },
+    "prior_state": {
+        "format_version": "1.0",
+        "terraform_version": "1.9.8",
+        "values": {
+            "outputs": {
+                "foo": {
+                    "sensitive": false,
+                    "value": "bar",
+                    "type": "string"
+                }
+            },
+            "root_module": {
+                "resources": [
+                    {
+                        "address": "null_resource.foo",
+                        "mode": "managed",
+                        "type": "null_resource",
+                        "name": "foo",
+                        "provider_name": "registry.terraform.io/hashicorp/null",
+                        "schema_version": 0,
+                        "values": {
+                            "id": "8378162001816571199",
+                            "triggers": null
+                        },
+                        "sensitive_values": {}
+                    }
+                ]
+            }
+        }
+    },
+    "configuration": {
+        "provider_config": {
+            "null": {
+                "name": "null",
+                "full_name": "registry.terraform.io/hashicorp/null"
+            }
+        },
+        "root_module": {
+            "outputs": {
+                "foo": {
+                    "expression": {
+                        "constant_value": "bar"
+                    }
+                }
+            },
+            "resources": [
+                {
+                    "address": "null_resource.foo",
+                    "mode": "managed",
+                    "type": "null_resource",
+                    "name": "foo",
+                    "provider_config_key": "null",
+                    "schema_version": 0
+                }
+            ]
+        }
+    },
+    "timestamp": "2024-11-26T01:40:45Z",
+    "applyable": true,
+    "complete": true,
+    "errored": false
+}
