@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
+	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
@@ -14,6 +17,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/suzuki-shunsuke/logrus-error/logerr"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
@@ -21,6 +25,9 @@ type Param struct {
 	PlanFile string
 	Dir      string
 	Root     string
+	Bucket   string
+	Key      string
+	Outputs  []string
 }
 
 type FileWithBackend struct {
@@ -28,6 +35,18 @@ type FileWithBackend struct {
 }
 
 type TerraformBlock struct{}
+
+type File struct {
+	Path    string
+	Content string
+	Byte    []byte
+}
+
+type Dir struct {
+	Path   string
+	Files  []*File
+	States []*RemoteState
+}
 
 func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
 	// parse plan file and extract changed outputs
@@ -40,6 +59,7 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 		logE.Info("no output changes")
 		return nil
 	}
+	changedOutputs := maps.Keys(planFile.OutputChanges)
 
 	// parse HCLs in dir and extract backend configurations
 	matchFiles, err := afero.Glob(afs, filepath.Join(param.Dir, "*.tf"))
@@ -79,26 +99,90 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	logE.WithFields(logrus.Fields{
 		"num_of_files": len(tfFiles),
 	}).Info("Found *.tf files")
-	states := []*RemoteState{}
+	/*
+		dir: {
+			files: [path, ...],
+			states: [name, ...]
+		}
+	*/
+	dirs := map[string]*Dir{}
 	for _, matchFile := range tfFiles {
-		logE := logE.WithField("file", matchFile)
 		b, err := afero.ReadFile(afs, matchFile)
 		if err != nil {
-			return fmt.Errorf("read a file: %w", err)
+			return fmt.Errorf("read a file: %w", logerr.WithFields(err, logrus.Fields{
+				"file": matchFile,
+			}))
 		}
 		s := string(b)
 		if !strings.Contains(s, "terraform_remote_state") {
 			continue
 		}
-		logE.Debug("terraform_remote_state is found")
-		remoteStates, err := extractRemoteStates(logE, b, matchFile, bucket)
-		if err != nil {
-			return fmt.Errorf("get terraform_remote_state: %w", err)
+		dirPath := filepath.Dir(matchFile)
+		dir, ok := dirs[dirPath]
+		if !ok {
+			dir = &Dir{
+				Path: dirPath,
+			}
 		}
-		states = append(states, remoteStates...)
+		dir.Files = append(dir.Files, &File{
+			Path:    matchFile,
+			Content: s,
+			Byte:    b,
+		})
+		dirs[dirPath] = dir
 	}
-	for _, state := range states {
-		fmt.Println(state.Name, state.File) //nolint:forbidigo
+	for _, dir := range dirs {
+		for _, file := range dir.Files {
+			logE := logE.WithField("file", file.Path)
+			logE.Debug("terraform_remote_state is found")
+			remoteStates, err := extractRemoteStates(logE, file.Byte, file.Path, bucket)
+			if err != nil {
+				return fmt.Errorf("get terraform_remote_state: %w", logerr.WithFields(err, logrus.Fields{
+					"file": file.Path,
+				}))
+			}
+			dir.States = append(dir.States, remoteStates...)
+		}
+	}
+	// Find attributes where changed outputs are used
+	// data.terraform_remote_state.<name>.outputs.<output_name>
+	/*
+		  {
+			output name: [path],
+		  }
+	*/
+	changed := map[string]map[string]struct{}{}
+	for _, dir := range dirs {
+		for _, file := range dir.Files {
+			if !strings.Contains(file.Content, "data.terraform_remote_state.") {
+				continue
+			}
+			for _, state := range dir.States {
+				if !strings.Contains(file.Content, "data.terraform_remote_state."+state.Name+".outputs.") {
+					continue
+				}
+				for outputName := range changedOutputs {
+					if !strings.Contains(file.Content, "data.terraform_remote_state."+state.Name+".outputs."+outputName) {
+						continue
+					}
+					m, ok := changed[outputName]
+					if !ok {
+						m = map[string]struct{}{}
+					}
+					m[file.Path] = struct{}{}
+					changed[outputName] = m
+				}
+			}
+		}
+	}
+	formattedChanged := make(map[string][]string, len(changed))
+	for k, v := range changed {
+		formattedChanged[k] = slices.Sorted(maps.Keys(v))
+	}
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(formattedChanged); err != nil {
+		return err
 	}
 	return nil
 }
@@ -173,6 +257,14 @@ type Bucket struct {
 }
 
 func handleTerraformBlock(block *hclsyntax.Block, bucket *Bucket) (bool, error) {
+	/*
+		terraform {
+		  backend "s3" {
+		    bucket = "terraform-state-prod"
+		    key    = "network/terraform.tfstate"
+		  }
+		}
+	*/
 	if block.Type != "terraform" {
 		return false, nil
 	}
@@ -224,7 +316,18 @@ type RemoteState struct {
 	File string
 }
 
+// data.terraform_remote_state.<name>.outputs.<output_name>
+
 func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error) { //nolint:cyclop
+	/*
+		data "terraform_remote_state" "vpc" {
+		  backend = "s3"
+		  config = {
+		    bucket = "terraform-state-XXXXXXXXXXXX"
+		    key    = "production/vpc/terraform.tfstate"
+		  }
+		}
+	*/
 	if block.Type != "data" {
 		return nil, nil //nolint:nilnil
 	}
