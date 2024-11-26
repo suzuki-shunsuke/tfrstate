@@ -146,12 +146,8 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	}
 	// Find attributes where changed outputs are used
 	// data.terraform_remote_state.<name>.outputs.<output_name>
-	/*
-		  {
-			output name: [path],
-		  }
-	*/
-	changed := map[string]map[string]struct{}{}
+	// directory -> file -> changed outputs
+	changed := map[string]map[string]map[string]struct{}{}
 	for _, dir := range dirs {
 		for _, file := range dir.Files {
 			if !strings.Contains(file.Content, "data.terraform_remote_state.") {
@@ -165,26 +161,66 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 					if !strings.Contains(file.Content, "data.terraform_remote_state."+state.Name+".outputs."+outputName) {
 						continue
 					}
-					m, ok := changed[outputName]
+					m, ok := changed[dir.Path]
 					if !ok {
-						m = map[string]struct{}{}
+						m = map[string]map[string]struct{}{}
 					}
-					m[file.Path] = struct{}{}
-					changed[outputName] = m
+					m2, ok := m[file.Path]
+					if !ok {
+						m2 = map[string]struct{}{
+							outputName: {},
+						}
+					}
+					m[file.Path] = m2
+					changed[dir.Path] = m
 				}
 			}
 		}
 	}
-	formattedChanged := make(map[string][]string, len(changed))
-	for k, v := range changed {
-		formattedChanged[k] = slices.Sorted(maps.Keys(v))
+	// convert map[string]struct{} to []string
+	/*
+		[
+		  {
+			dir: "",
+			files: [
+				{
+					path: "",
+					outputs: []
+				}
+			]
+		  }
+		]
+	*/
+	changes := make([]*Change, 0, len(changed))
+	for dir, m := range changed {
+		files := make([]*ChangedFile, 0, len(m))
+		for file, outputs := range m {
+			files = append(files, &ChangedFile{
+				Path:    file,
+				Outputs: slices.Sorted(maps.Keys(outputs)),
+			})
+		}
+		changes = append(changes, &Change{
+			Dir:   dir,
+			Files: files,
+		})
 	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(formattedChanged); err != nil {
+	if err := encoder.Encode(changes); err != nil {
 		return err
 	}
 	return nil
+}
+
+type Change struct {
+	Dir   string         `json:"dir"`
+	Files []*ChangedFile `json:"files"`
+}
+
+type ChangedFile struct {
+	Path    string   `json:"path"`
+	Outputs []string `json:"outputs"`
 }
 
 func findTFFiles(afs afero.Fs) ([]string, error) {
