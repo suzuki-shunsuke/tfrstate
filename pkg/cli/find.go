@@ -22,6 +22,11 @@ func (rc *findCommand) command() *cli.Command {
 		Action: rc.action,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
+				Name:  "output-format",
+				Usage: "Output format. One of 'json' (default), 'markdown'",
+				Value: "json",
+			},
+			&cli.StringFlag{
 				Name:  "plan-json",
 				Usage: "The file path to the plan file in JSON format",
 			},
@@ -60,6 +65,7 @@ func (rc *findCommand) action(c *cli.Context) error {
 		return fmt.Errorf("get the current directory: %w", err)
 	}
 	return find.Find(c.Context, logE, fs, &find.Param{ //nolint:wrapcheck
+		Format:   c.String("output-format"),
 		PlanFile: c.String("plan-json"),
 		Root:     c.String("base-dir"),
 		Dir:      c.String("backend-dir"),
