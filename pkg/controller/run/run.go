@@ -142,7 +142,7 @@ func toChanges(pwd, baseDir string, changed map[string]map[string]map[string]str
 		}
 		dir, err := filepath.Rel(baseDir, dir)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get a relative path from baseDir to dir: %w", err)
 		}
 		files := make([]*ChangedFile, 0, len(m))
 		for file, outputs := range m {
@@ -153,7 +153,7 @@ func toChanges(pwd, baseDir string, changed map[string]map[string]map[string]str
 			}
 			file, err := filepath.Rel(baseDir, file)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("get a relative path from baseDir to file: %w", err)
 			}
 			files = append(files, &ChangedFile{
 				Path:    file,
