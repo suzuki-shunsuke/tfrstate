@@ -29,7 +29,7 @@ tfrstate run -s3-bucket mybucket -s3-key path/to/my/key -output foo
 ```sh
 terraform plan -out plan.out
 terraform show -json plan.out > plan.json
-tfrstate run -plan-json plan.json -root-dir "$(git rev-parse --show-toplevel)" > result.json
+tfrstate run -plan-json plan.json -base-dir "$(git rev-parse --show-toplevel)" > result.json
 length=$(jq length result.json)
 if [ "$length" -eq 0 ]; then
   exit 0
@@ -51,7 +51,7 @@ done < <(jq -r ".[].dir" result.json)
 
 ## Output Format
 
-File paths are relative paths from the root directory `-root-dir`.
+File paths are relative paths from the base directory `-base-dir`.
 
 ```json
 [

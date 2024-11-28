@@ -26,7 +26,7 @@ func (rc *runCommand) command() *cli.Command {
 				Usage: "The file path to the plan file in JSON format",
 			},
 			&cli.StringFlag{
-				Name:  "root-dir",
+				Name:  "base-dir",
 				Usage: "The file path to the directory where Terraform configuration files are located",
 			},
 			&cli.StringFlag{
@@ -61,7 +61,7 @@ func (rc *runCommand) action(c *cli.Context) error {
 	}
 	return run.Run(c.Context, logE, fs, &run.Param{ //nolint:wrapcheck
 		PlanFile: c.String("plan-json"),
-		Root:     c.String("root-dir"),
+		Root:     c.String("base-dir"),
 		Dir:      c.String("backend-dir"),
 		Key:      c.String("s3-key"),
 		Bucket:   c.String("s3-bucket"),

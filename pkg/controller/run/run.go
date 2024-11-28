@@ -82,7 +82,7 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 		"key":    bucket.Key,
 	}).Info("S3 buckend configuration")
 
-	// find HCLs in root directories and list directories where changed outputs are used
+	// find HCLs in base directories and list directories where changed outputs are used
 	tfFiles, err := findTFFiles(afs, param.Root)
 	if err != nil {
 		return err
@@ -128,30 +128,30 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	return nil
 }
 
-func toChanges(pwd, rootDir string, changed map[string]map[string]map[string]struct{}) ([]*Change, error) {
+func toChanges(pwd, baseDir string, changed map[string]map[string]map[string]struct{}) ([]*Change, error) {
 	changes := make([]*Change, 0, len(changed))
-	// rootDir is an absolute path or a relative path from the current directory
-	if !filepath.IsAbs(rootDir) {
-		rootDir = filepath.Join(pwd, rootDir)
+	// baseDir is an absolute path or a relative path from the current directory
+	if !filepath.IsAbs(baseDir) {
+		baseDir = filepath.Join(pwd, baseDir)
 	}
 	for dir, m := range changed {
-		// convert dir to the relative path from the root directory
+		// convert dir to the relative path from the base directory
 		// dir is an absolute path or a relative path from the current directory
 		if !filepath.IsAbs(dir) {
 			dir = filepath.Join(pwd, dir)
 		}
-		dir, err := filepath.Rel(rootDir, dir)
+		dir, err := filepath.Rel(baseDir, dir)
 		if err != nil {
 			return nil, err
 		}
 		files := make([]*ChangedFile, 0, len(m))
 		for file, outputs := range m {
-			// convert file to the relative path from the root directory
+			// convert file to the relative path from the base directory
 			// file is an absolute path or a relative path from the current directory
 			if !filepath.IsAbs(file) {
 				file = filepath.Join(pwd, file)
 			}
-			file, err := filepath.Rel(rootDir, file)
+			file, err := filepath.Rel(baseDir, file)
 			if err != nil {
 				return nil, err
 			}
