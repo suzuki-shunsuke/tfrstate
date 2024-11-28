@@ -1,4 +1,4 @@
-package run
+package find
 
 import (
 	"context"
@@ -43,7 +43,7 @@ type Dir struct {
 	States []*RemoteState
 }
 
-func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
+func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
 	// parse plan file and extract changed outputs
 	if err := validateParam(param); err != nil {
 		return err

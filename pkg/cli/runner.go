@@ -50,7 +50,7 @@ func (r *Runner) Run(ctx context.Context, args ...string) error {
 				version: r.LDFlags.Version,
 				commit:  r.LDFlags.Commit,
 			}).command(),
-			(&runCommand{
+			(&findCommand{
 				logE: r.LogE,
 			}).command(),
 			(&completionCommand{

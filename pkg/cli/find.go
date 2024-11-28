@@ -6,18 +6,18 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.com/suzuki-shunsuke/tfrstate/pkg/controller/run"
+	"github.com/suzuki-shunsuke/tfrstate/pkg/controller/find"
 	"github.com/suzuki-shunsuke/tfrstate/pkg/log"
 	"github.com/urfave/cli/v2"
 )
 
-type runCommand struct {
+type findCommand struct {
 	logE *logrus.Entry
 }
 
-func (rc *runCommand) command() *cli.Command {
+func (rc *findCommand) command() *cli.Command {
 	return &cli.Command{
-		Name:   "run",
+		Name:   "find",
 		Usage:  "Find directories where a given terraform_remote_state data source is used",
 		Action: rc.action,
 		Flags: []cli.Flag{
@@ -50,7 +50,7 @@ func (rc *runCommand) command() *cli.Command {
 	}
 }
 
-func (rc *runCommand) action(c *cli.Context) error {
+func (rc *findCommand) action(c *cli.Context) error {
 	fs := afero.NewOsFs()
 	logE := rc.logE
 	log.SetLevel(c.String("log-level"), logE)
@@ -59,7 +59,7 @@ func (rc *runCommand) action(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("get the current directory: %w", err)
 	}
-	return run.Run(c.Context, logE, fs, &run.Param{ //nolint:wrapcheck
+	return find.Find(c.Context, logE, fs, &find.Param{ //nolint:wrapcheck
 		PlanFile: c.String("plan-json"),
 		Root:     c.String("base-dir"),
 		Dir:      c.String("backend-dir"),

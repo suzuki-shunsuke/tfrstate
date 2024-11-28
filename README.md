@@ -21,7 +21,7 @@ go install github.com/suzuki-shunsuke/tfrstate@latest
 1. Check directories where a specific output is used.
 
 ```sh
-tfrstate run -s3-bucket mybucket -s3-key path/to/my/key -output foo
+tfrstate find -s3-bucket mybucket -s3-key path/to/my/key -output foo
 ```
 
 2. Post a comment when outputs are changed in CI
@@ -29,7 +29,7 @@ tfrstate run -s3-bucket mybucket -s3-key path/to/my/key -output foo
 ```sh
 terraform plan -out plan.out
 terraform show -json plan.out > plan.json
-tfrstate run -plan-json plan.json -base-dir "$(git rev-parse --show-toplevel)" > result.json
+tfrstate find -plan-json plan.json -base-dir "$(git rev-parse --show-toplevel)" > result.json
 length=$(jq length result.json)
 if [ "$length" -eq 0 ]; then
   exit 0
