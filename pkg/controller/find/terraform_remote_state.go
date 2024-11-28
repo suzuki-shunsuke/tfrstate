@@ -1,4 +1,4 @@
-package run
+package find
 
 import (
 	"encoding/json"
@@ -59,7 +59,7 @@ func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error
 	if len(block.Labels) != 2 || block.Labels[0] != "terraform_remote_state" {
 		return nil, nil //nolint:nilnil
 	}
-	logE.Info("terraform_remote_state is found")
+	logE.Debug("terraform_remote_state is found")
 	backendAttr, ok := block.Body.Attributes["backend"]
 	if !ok {
 		logE.Warn("backend attribute is not found")

@@ -1,7 +1,7 @@
 ## Example
 
 ```sh
-tfrstate run -plan-json foo/plan.json -backend-dir foo
+tfrstate find -plan-json foo/plan.json -backend-dir foo
 ```
 
 Outputs:

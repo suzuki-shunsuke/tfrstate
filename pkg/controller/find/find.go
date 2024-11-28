@@ -1,4 +1,4 @@
-package run
+package find
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 )
 
 type Param struct {
+	Format   string
 	PlanFile string
 	Dir      string
 	Root     string
@@ -43,7 +44,7 @@ type Dir struct {
 	States []*RemoteState
 }
 
-func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
+func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
 	// parse plan file and extract changed outputs
 	if err := validateParam(param); err != nil {
 		return err
@@ -80,7 +81,7 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	logE.WithFields(logrus.Fields{
 		"bucket": bucket.Bucket,
 		"key":    bucket.Key,
-	}).Info("S3 buckend configuration")
+	}).Debug("S3 buckend configuration")
 
 	// find HCLs in base directories and list directories where changed outputs are used
 	tfFiles, err := findTFFiles(afs, param.Root)
@@ -89,7 +90,7 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	}
 	logE.WithFields(logrus.Fields{
 		"num_of_files": len(tfFiles),
-	}).Info("Found *.tf files")
+	}).Debug("Found *.tf files")
 	dirs := map[string]*Dir{}
 	// Find files including a string "terraform_remote_state"
 	if err := filterFilesWithRemoteState(afs, tfFiles, dirs); err != nil {
@@ -122,7 +123,7 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 		return err
 	}
 	// Output the result
-	if err := output(changes, param.Stdout); err != nil {
+	if err := output(changes, param.Stdout, param.Format); err != nil {
 		return err
 	}
 	return nil
