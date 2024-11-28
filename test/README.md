@@ -16,7 +16,7 @@ INFO[0000] terraform_remote_state is found               env=darwin/arm64 file=b
     "dir": "bar/yoo",
     "files": [
       {
-        "path": "bar/yoo/locals.tf",
+        "path": "locals.tf",
         "outputs": [
           "foo"
         ]
@@ -27,7 +27,7 @@ INFO[0000] terraform_remote_state is found               env=darwin/arm64 file=b
     "dir": "bar/zoo",
     "files": [
       {
-        "path": "bar/zoo/foo.tf",
+        "path": "foo.tf",
         "outputs": [
           "foo"
         ]
