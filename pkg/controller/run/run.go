@@ -18,6 +18,7 @@ type Param struct {
 	PlanFile string
 	Dir      string
 	Root     string
+	PWD      string
 	Bucket   string
 	Key      string
 	Outputs  []string
@@ -116,7 +117,10 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	changed := map[string]map[string]map[string]struct{}{}
 	findCaller(dirs, changedOutputs, changed)
 	// Format the result to output as JSON
-	changes := toChanges(changed)
+	changes, err := toChanges(param.PWD, param.Root, changed)
+	if err != nil {
+		return err
+	}
 	// Output the result
 	if err := output(changes, param.Stdout); err != nil {
 		return err
@@ -124,11 +128,33 @@ func Run(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) erro
 	return nil
 }
 
-func toChanges(changed map[string]map[string]map[string]struct{}) []*Change {
+func toChanges(pwd, rootDir string, changed map[string]map[string]map[string]struct{}) ([]*Change, error) {
 	changes := make([]*Change, 0, len(changed))
+	// rootDir is an absolute path or a relative path from the current directory
+	if !filepath.IsAbs(rootDir) {
+		rootDir = filepath.Join(pwd, rootDir)
+	}
 	for dir, m := range changed {
+		// convert dir to the relative path from the root directory
+		// dir is an absolute path or a relative path from the current directory
+		if !filepath.IsAbs(dir) {
+			dir = filepath.Join(pwd, dir)
+		}
+		dir, err := filepath.Rel(rootDir, dir)
+		if err != nil {
+			return nil, err
+		}
 		files := make([]*ChangedFile, 0, len(m))
 		for file, outputs := range m {
+			// convert file to the relative path from the root directory
+			// file is an absolute path or a relative path from the current directory
+			if !filepath.IsAbs(file) {
+				file = filepath.Join(pwd, file)
+			}
+			file, err := filepath.Rel(rootDir, file)
+			if err != nil {
+				return nil, err
+			}
 			files = append(files, &ChangedFile{
 				Path:    file,
 				Outputs: slices.Sorted(maps.Keys(outputs)),
@@ -139,7 +165,7 @@ func toChanges(changed map[string]map[string]map[string]struct{}) []*Change {
 			Files: files,
 		})
 	}
-	return changes
+	return changes, nil
 }
 
 func filterFilesWithRemoteState(afs afero.Fs, tfFiles []string, dirs map[string]*Dir) error {

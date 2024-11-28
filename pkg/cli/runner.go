@@ -30,7 +30,7 @@ func (r *Runner) Run(ctx context.Context, args ...string) error {
 	}
 	app := cli.App{
 		Name:     "tfrstate",
-		Usage:    "",
+		Usage:    "Find directories where a given terraform_remote_state data source is used",
 		Version:  r.LDFlags.Version + " (" + r.LDFlags.Commit + ")",
 		Compiled: compiledDate,
 		Flags: []cli.Flag{
@@ -45,7 +45,11 @@ func (r *Runner) Run(ctx context.Context, args ...string) error {
 		},
 		EnableBashCompletion: true,
 		Commands: []*cli.Command{
-			(&versionCommand{}).command(),
+			(&versionCommand{
+				stdout:  r.Stdout,
+				version: r.LDFlags.Version,
+				commit:  r.LDFlags.Commit,
+			}).command(),
 			(&runCommand{
 				logE: r.LogE,
 			}).command(),
