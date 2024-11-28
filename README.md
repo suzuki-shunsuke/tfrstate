@@ -51,15 +51,13 @@ done < <(jq -r ".[].dir" result.json)
 
 ## Output Format
 
-File paths are relative paths from the base directory `-base-dir`.
-
 ```json
 [
   {
-    "dir": "directory where depending on changed outputs",
+    "dir": "A directory where depending on changed outputs. A relative path from the base directory",
     "files": [
       {
-        "path": "file depending on changed outputs",
+        "path": "A file depending on changed outputs. A relative path from dir",
         "outputs": [
           "changed output name"
         ]
