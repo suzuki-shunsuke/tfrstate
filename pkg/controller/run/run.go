@@ -137,21 +137,22 @@ func toChanges(pwd, baseDir string, changed map[string]map[string]map[string]str
 	for dir, m := range changed {
 		// convert dir to the relative path from the base directory
 		// dir is an absolute path or a relative path from the current directory
+		absDir := dir
 		if !filepath.IsAbs(dir) {
-			dir = filepath.Join(pwd, dir)
+			absDir = filepath.Join(pwd, dir)
 		}
-		dir, err := filepath.Rel(baseDir, dir)
+		dir, err := filepath.Rel(baseDir, absDir)
 		if err != nil {
 			return nil, fmt.Errorf("get a relative path from baseDir to dir: %w", err)
 		}
 		files := make([]*ChangedFile, 0, len(m))
 		for file, outputs := range m {
-			// convert file to the relative path from the base directory
+			// convert file to the relative path from dir
 			// file is an absolute path or a relative path from the current directory
 			if !filepath.IsAbs(file) {
 				file = filepath.Join(pwd, file)
 			}
-			file, err := filepath.Rel(baseDir, file)
+			file, err := filepath.Rel(absDir, file)
 			if err != nil {
 				return nil, fmt.Errorf("get a relative path from baseDir to file: %w", err)
 			}
