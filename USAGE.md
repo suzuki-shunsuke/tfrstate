@@ -11,7 +11,7 @@ USAGE:
    tfrstate [global options] command [command options]
 
 VERSION:
-    ()
+   0.1.0 (0549dd6619b59190bee0774cd51a514bded56497)
 
 COMMANDS:
    version     Show version
