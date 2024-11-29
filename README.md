@@ -1,5 +1,7 @@
 # tfrstate
 
+[MIT](LICENSE) | [Usage](USAGE.md)
+
 CLI to find directories where changed [terraform_remote_state data source](https://developer.hashicorp.com/terraform/language/state/remote-state-data) is used.
 
 You can warn changes of Terraform Output Values in CI:
@@ -81,7 +83,6 @@ done < <(jq -r ".[].dir" result.json)
     ]
   }
 ]
-
 ```
 
 ## LICENSE
