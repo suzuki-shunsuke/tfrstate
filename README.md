@@ -1,6 +1,6 @@
 # tfrstate (Terraform Remote State)
 
-[MIT](LICENSE) | [Usage](USAGE.md)
+[MIT](LICENSE) | [Install](INSTALL.md) | [Usage](USAGE.md)
 
 CLI to find directories where changed [terraform_remote_state data source](https://developer.hashicorp.com/terraform/language/state/remote-state-data) is used.
 
@@ -20,21 +20,13 @@ Or when you remove Terraform Output Values, you would want to know which Terrafo
 tfrstate is a CLI to find Terraform Root Modules depending on a given Terraform State via `terraform_remote_state`.
 Using this tool, you can look into the dependency, notifying to people when changing output values in CI, and creating pull requests to reflect changes of output values after applying changes.
 
-## PoC
-
-https://github.com/suzuki-shunsuke/poc-tfrstate
-
 ## Supported Backends
 
 - [S3 Backend](https://developer.hashicorp.com/terraform/language/backend/s3)
 
-## Install
-
-```sh
-go install github.com/suzuki-shunsuke/tfrstate@latest
-```
-
 ## How To Use
+
+[Please see PoC too](https://github.com/suzuki-shunsuke/poc-tfrstate).
 
 1. Check directories where a specific output is used.
 
