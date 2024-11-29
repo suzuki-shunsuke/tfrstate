@@ -1,4 +1,4 @@
-# tfrstate
+# tfrstate (Terraform Remote State)
 
 [MIT](LICENSE) | [Usage](USAGE.md)
 
