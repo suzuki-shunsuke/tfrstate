@@ -35,7 +35,7 @@ go install github.com/suzuki-shunsuke/tfrstate/cmd/tfrstate@latest
 
 ## GitHub Releases
 
-You can download an asset from [GitHub Reelases](https://github.com/suzuki-shunsuke/tfrstate/releases).
+You can download an asset from [GitHub Releases](https://github.com/suzuki-shunsuke/tfrstate/releases).
 Please unarchive it and install a pre built binary into `$PATH`. 
 
 ### Verify downloaded assets from GitHub Releases
@@ -72,8 +72,9 @@ aqua g -i slsa-framework/slsa-verifier
 
 ```sh
 version=v0.1.0
-gh release download -R suzuki-shunsuke/tfrstate "$version"
-slsa-verifier verify-artifact tfrstate_darwin_arm64.tar.gz \
+asset=tfrstate_darwin_arm64.tar.gz
+gh release download -R suzuki-shunsuke/tfrstate "$version" -p "$asset" -p multiple.intoto.jsonl
+slsa-verifier verify-artifact "$asset" \
   --provenance-path multiple.intoto.jsonl \
   --source-uri github.com/suzuki-shunsuke/tfrstate \
   --source-tag "$version"
@@ -90,7 +91,13 @@ aqua g -i sigstore/cosign
 ```sh
 version=v0.1.0
 checksum_file="tfrstate_${version#v}_checksums.txt"
-gh release download -R suzuki-shunsuke/tfrstate "$version"
+asset=tfrstate_darwin_arm64.tar.gz
+gh release download "$version" \
+  -R suzuki-shunsuke/tfrstate \
+  -p "$asset" \
+  -p "$checksum_file" \
+  -p "${checksum_file}.pem" \
+  -p "${checksum_file}.sig"
 cosign verify-blob \
   --signature "${checksum_file}.sig" \
   --certificate "${checksum_file}.pem" \
