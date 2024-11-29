@@ -7,14 +7,14 @@ There are some ways to install tfrstate.
 1. [Homebrew](#homebrew)
 1. [aqua](#aqua)
 1. [GitHub Releases](#github-releases)
-1. [Build an executable binary from source code yourself using Go](#build)
+1. [Build an executable binary from source code yourself using Go](#build-an-executable-binary-from-source-code-yourself-using-go)
 
 ## Homebrew
 
 You can install tfrstate using [Homebrew](https://brew.sh/).
 
-```console
-$ brew install suzuki-shunsuke/tfrstate/tfrstate
+```sh
+brew install suzuki-shunsuke/tfrstate/tfrstate
 ```
 
 ## aqua
@@ -23,8 +23,8 @@ $ brew install suzuki-shunsuke/tfrstate/tfrstate
 
 You can install tfrstate using [aqua](https://aquaproj.github.io/).
 
-```console
-$ aqua g -i suzuki-shunsuke/tfrstate
+```sh
+aqua g -i suzuki-shunsuke/tfrstate
 ```
 
 ## Build an executable binary from source code yourself using Go
