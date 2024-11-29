@@ -33,8 +33,7 @@ source <(tfrstate completion zsh)
 
 fish
 
-tfrstate completion fish > ~/.config/fish/completions/tfrstate.fish
-`,
+tfrstate completion fish > ~/.config/fish/completions/tfrstate.fish`,
 		Subcommands: []*cli.Command{
 			{
 				Name:   "bash",
