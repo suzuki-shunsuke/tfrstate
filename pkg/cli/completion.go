@@ -23,11 +23,11 @@ Source the output to enable completion.
 
 e.g.
 
-.bash_profile
+.bashrc
 
-source <(tfrstate completion bash)
+eval "$(tfrstate completion bash)"
 
-.zprofile
+.zshrc
 
 source <(tfrstate completion zsh)
 
