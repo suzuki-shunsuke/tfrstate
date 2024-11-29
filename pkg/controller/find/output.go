@@ -18,6 +18,10 @@ func output(changes []*Change, stdout io.Writer, format string) error {
 		}
 		return nil
 	case "markdown":
+		if len(changes) == 0 {
+			// No output
+			return nil
+		}
 		lines := []string{
 			"dir | file | outputs",
 			"--- | --- | ---",
