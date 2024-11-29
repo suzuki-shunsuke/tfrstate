@@ -1,6 +1,14 @@
 # tfrstate
 
-Find directories where changed [terraform_remote_state data source](https://developer.hashicorp.com/terraform/language/state/remote-state-data) is used.
+CLI to find directories where changed [terraform_remote_state data source](https://developer.hashicorp.com/terraform/language/state/remote-state-data) is used.
+
+You can warn changes of Terraform Output Values in CI:
+
+![image](https://github.com/user-attachments/assets/128ee2ee-1e69-4303-b835-2e963b519c58)
+
+You can also create pull requests via CI to reflect changes of Output Values to Terraform Root Modules:
+
+![image](https://github.com/user-attachments/assets/2e1900a2-49af-4574-b342-95cf0ba38225)
 
 ## Overview
 
@@ -9,6 +17,14 @@ Or when you remove Terraform Output Values, you would want to know which Terrafo
 
 tfrstate is a CLI to find Terraform Root Modules depending on a given Terraform State via `terraform_remote_state`.
 Using this tool, you can look into the dependency, notifying to people when changing output values in CI, and creating pull requests to reflect changes of output values after applying changes.
+
+## PoC
+
+https://github.com/suzuki-shunsuke/poc-tfrstate
+
+## Supported Backends
+
+- [S3 Backend](https://developer.hashicorp.com/terraform/language/backend/s3)
 
 ## Install
 
