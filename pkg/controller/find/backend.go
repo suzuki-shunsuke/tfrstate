@@ -60,6 +60,12 @@ func handleTerraformBlock(block *hclsyntax.Block, bucket *Bucket) (bool, error) 
 		    key    = "network/terraform.tfstate"
 		  }
 		}
+		terraform {
+		  backend "gcs" {
+		    bucket  = "tf-state-prod"
+		    prefix  = "terraform/state"
+		  }
+		}
 	*/
 	if block.Type != "terraform" {
 		return false, nil
@@ -68,24 +74,73 @@ func handleTerraformBlock(block *hclsyntax.Block, bucket *Bucket) (bool, error) 
 		if backend.Type != "backend" {
 			continue
 		}
-		if len(backend.Labels) != 1 || backend.Labels[0] != "s3" {
+		if len(backend.Labels) != 1 {
 			return false, nil
 		}
-		if key, ok := backend.Body.Attributes["key"]; ok {
-			val, diag := key.Expr.Value(nil)
-			if diag.HasErrors() {
-				return false, diag
-			}
-			bucket.Key = val.AsString()
+		backendType := backend.Labels[0]
+		if backendType != "s3" {
+			return false, nil
 		}
-		if b, ok := backend.Body.Attributes["bucket"]; ok {
-			val, diag := b.Expr.Value(nil)
-			if diag.HasErrors() {
-				return false, diag
-			}
-			bucket.Bucket = val.AsString()
+		handlers := map[string]handleBackend{
+			"s3":  handleS3Backend,
+			"gcs": handleGCSBackend,
+		}
+		handler, ok := handlers[backendType]
+		if !ok {
+			return false, nil
+		}
+		if err := handler(backend, bucket); err != nil {
+			return false, err
 		}
 		return true, nil
 	}
 	return false, nil
+}
+
+type handleBackend func(backend *hclsyntax.Block, bucket *Bucket) error
+
+func handleS3Backend(backend *hclsyntax.Block, bucket *Bucket) error {
+	bucket.Type = "s3"
+	if key, ok := backend.Body.Attributes["key"]; ok {
+		val, diag := key.Expr.Value(nil)
+		if diag.HasErrors() {
+			return diag
+		}
+		bucket.Key = val.AsString()
+	}
+	if b, ok := backend.Body.Attributes["bucket"]; ok {
+		val, diag := b.Expr.Value(nil)
+		if diag.HasErrors() {
+			return diag
+		}
+		bucket.Bucket = val.AsString()
+	}
+	return nil
+}
+
+func handleGCSBackend(backend *hclsyntax.Block, bucket *Bucket) error {
+	/*
+		terraform {
+		  backend "gcs" {
+		    bucket  = "tf-state-prod"
+		    prefix  = "terraform/state"
+		  }
+		}
+	*/
+	bucket.Type = "gcs"
+	if prefix, ok := backend.Body.Attributes["prefix"]; ok {
+		val, diag := prefix.Expr.Value(nil)
+		if diag.HasErrors() {
+			return diag
+		}
+		bucket.Prefix = val.AsString()
+	}
+	if b, ok := backend.Body.Attributes["bucket"]; ok {
+		val, diag := b.Expr.Value(nil)
+		if diag.HasErrors() {
+			return diag
+		}
+		bucket.Bucket = val.AsString()
+	}
+	return nil
 }

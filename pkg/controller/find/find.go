@@ -74,14 +74,16 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 		}
 	}
 
-	if bucket.Key == "" || bucket.Bucket == "" {
-		logE.Info("no s3 backend configuration")
+	if bucket.Type == "" {
+		logE.Info("no backend configuration")
 		return nil
 	}
 	logE.WithFields(logrus.Fields{
 		"bucket": bucket.Bucket,
 		"key":    bucket.Key,
-	}).Debug("S3 buckend configuration")
+		"prefix": bucket.Prefix,
+		"type":   bucket.Type,
+	}).Debug("backend configuration")
 
 	// find HCLs in base directories and list directories where changed outputs are used
 	tfFiles, err := findTFFiles(afs, param.Root)
@@ -211,8 +213,14 @@ type ChangedFile struct {
 }
 
 type Bucket struct {
-	Bucket string
-	Key    string
+	Type   string `json:"type"`
+	Bucket string `json:"bucket"`
+	Key    string `json:"key"`
+	Prefix string `json:"prefix"`
+}
+
+func (b *Bucket) Compare(bucket *Bucket) bool {
+	return b.Type == bucket.Type && b.Bucket == bucket.Bucket && b.Key == bucket.Key && b.Prefix == bucket.Prefix
 }
 
 type RemoteState struct {

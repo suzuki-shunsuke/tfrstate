@@ -31,7 +31,7 @@ func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backen
 			continue
 		}
 		name := block.Labels[1]
-		if bucket.Key != backend.Key || bucket.Bucket != backend.Bucket {
+		if !bucket.Compare(backend) {
 			break
 		}
 		states = append(states, &RemoteState{
@@ -70,10 +70,6 @@ func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error
 		return nil, diag
 	}
 	backendType := val.AsString()
-	if backendType != "s3" {
-		logE.Debug("backend type isn't s3")
-		return nil, nil //nolint:nilnil
-	}
 	bucket := &Bucket{}
 	configAttr, ok := block.Body.Attributes["config"]
 	if !ok {
@@ -95,5 +91,6 @@ func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error
 	if err := json.Unmarshal(b, bucket); err != nil {
 		return nil, fmt.Errorf("unmarshal config attribute as JSON: %w", err)
 	}
+	bucket.Type = backendType
 	return bucket, nil
 }
