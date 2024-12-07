@@ -60,6 +60,12 @@ func handleTerraformBlock(block *hclsyntax.Block, bucket *Bucket) (bool, error) 
 		    key    = "network/terraform.tfstate"
 		  }
 		}
+		terraform {
+		  backend "gcs" {
+		    bucket  = "tf-state-prod"
+		    prefix  = "terraform/state"
+		  }
+		}
 	*/
 	if block.Type != "terraform" {
 		return false, nil
@@ -68,24 +74,21 @@ func handleTerraformBlock(block *hclsyntax.Block, bucket *Bucket) (bool, error) 
 		if backend.Type != "backend" {
 			continue
 		}
-		if len(backend.Labels) != 1 || backend.Labels[0] != "s3" {
+		if len(backend.Labels) != 1 {
 			return false, nil
 		}
-		if key, ok := backend.Body.Attributes["key"]; ok {
-			val, diag := key.Expr.Value(nil)
-			if diag.HasErrors() {
-				return false, diag
-			}
-			bucket.Key = val.AsString()
+		backendType := backend.Labels[0]
+		handlers := getHandlers()
+		handler, ok := handlers[backendType]
+		if !ok {
+			return false, nil
 		}
-		if b, ok := backend.Body.Attributes["bucket"]; ok {
-			val, diag := b.Expr.Value(nil)
-			if diag.HasErrors() {
-				return false, diag
-			}
-			bucket.Bucket = val.AsString()
+		if err := handler(backend, bucket); err != nil {
+			return false, err
 		}
 		return true, nil
 	}
 	return false, nil
 }
+
+type handleBackend func(backend *hclsyntax.Block, bucket *Bucket) error
