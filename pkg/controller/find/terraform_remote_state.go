@@ -43,7 +43,7 @@ func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backen
 	return states, nil
 }
 
-func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error) { //nolint:cyclop
+func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error) {
 	/*
 		data "terraform_remote_state" "vpc" {
 		  backend = "s3"
