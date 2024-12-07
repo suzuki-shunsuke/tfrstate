@@ -1,6 +1,9 @@
 package find
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/sirupsen/logrus"
 )
@@ -30,6 +33,52 @@ func (b *Bucket) LogE() logrus.Fields {
 
 func (b *Bucket) Compare(bucket *Bucket) bool {
 	return b.Type == bucket.Type && b.Bucket == bucket.Bucket && b.Key == bucket.Key && b.Prefix == bucket.Prefix
+}
+
+func (b *Bucket) Copy(bucket *Bucket) {
+	bucket.Type = b.Type
+	bucket.Bucket = b.Bucket
+	bucket.Key = b.Key
+	bucket.Prefix = b.Prefix
+}
+
+/*
+	{
+	    "terraform": {
+	        "backend": {
+	            "s3": {
+	                "bucket": "",
+	                "key": ""
+	            }
+	        }
+	    }
+	}
+*/
+type BackendJSON struct {
+	Terraform struct {
+		Backend struct {
+			S3  *Bucket `json:"s3"`
+			GCS *Bucket `json:"gcs"`
+		} `json:"backend"`
+	} `json:"terraform"`
+}
+
+func extractBackendFromJSON(src []byte, bucket *Bucket) (bool, error) {
+	bj := &BackendJSON{}
+	if err := json.Unmarshal(src, bj); err != nil {
+		return false, fmt.Errorf("unmarshal *.tf.json as JSON: %w", err)
+	}
+	if bj.Terraform.Backend.S3 != nil {
+		bj.Terraform.Backend.S3.Type = "s3"
+		bj.Terraform.Backend.S3.Copy(bucket)
+		return true, nil
+	}
+	if bj.Terraform.Backend.GCS != nil {
+		bj.Terraform.Backend.S3.Type = "gcs"
+		bj.Terraform.Backend.S3.Copy(bucket)
+		return true, nil
+	}
+	return false, nil
 }
 
 func getHandlers() map[string]handleBackend {
