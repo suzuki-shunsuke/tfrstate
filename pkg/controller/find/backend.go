@@ -32,6 +32,32 @@ func findBackendConfig(afs afero.Fs, dir string, bucket *Bucket) error {
 			break
 		}
 	}
+	if err := findBackendConfigJSON(afs, dir, bucket); err != nil {
+		return fmt.Errorf("get backend configuration from *.tf.json: %w", err)
+	}
+	return nil
+}
+
+func findBackendConfigJSON(afs afero.Fs, dir string, bucket *Bucket) error {
+	matchFiles, err := afero.Glob(afs, filepath.Join(dir, "*.tf.json"))
+	if err != nil {
+		return fmt.Errorf("glob *.tf.json to get Backend configuration: %w", err)
+	}
+	for _, matchFile := range matchFiles {
+		b, err := afero.ReadFile(afs, matchFile)
+		if err != nil {
+			return fmt.Errorf("read a file: %w", err)
+		}
+		s := string(b)
+		if !strings.Contains(s, "backend") {
+			continue
+		}
+		if f, err := extractBackendFromJSON(b, bucket); err != nil {
+			return fmt.Errorf("get backend configuration: %w", err)
+		} else if f {
+			break
+		}
+	}
 	return nil
 }
 
