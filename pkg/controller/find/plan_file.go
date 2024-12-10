@@ -33,7 +33,7 @@ func extractChangedOutputs(afs afero.Fs, path string) ([]string, error) {
 
 func excludeCreatedOutputs(file *PlanFile) {
 	for name, change := range file.OutputChanges {
-		if len(change.Actions) == 1 && change.Actions[0] == "create" {
+		if len(change.Actions) == 1 && (change.Actions[0] == "create" || change.Actions[0] == "no-op") {
 			delete(file.OutputChanges, name)
 		}
 	}
