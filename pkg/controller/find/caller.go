@@ -25,10 +25,9 @@ func findCaller(dirs map[string]*Dir, changedOutputs []string, changed map[strin
 					}
 					m2, ok := m[file.Path]
 					if !ok {
-						m2 = map[string]struct{}{
-							outputName: {},
-						}
+						m2 = map[string]struct{}{}
 					}
+					m2[outputName] = struct{}{}
 					m[file.Path] = m2
 					changed[dir.Path] = m
 				}
