@@ -73,7 +73,7 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 		changedOutputs = arr
 	}
 
-	if param.Bucket == "" {
+	if bucket.Bucket == "" {
 		// parse HCLs in dir and extract backend configurations
 		if err := findBackendConfig(afs, param.Dir, bucket); err != nil {
 			return err
