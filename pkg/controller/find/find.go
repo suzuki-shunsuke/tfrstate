@@ -15,15 +15,17 @@ import (
 )
 
 type Param struct {
-	Format   string
-	PlanFile string
-	Dir      string
-	Root     string
-	PWD      string
-	Bucket   string
-	Key      string
-	Outputs  []string
-	Stdout   io.Writer
+	Format    string
+	PlanFile  string
+	Dir       string
+	Root      string
+	PWD       string
+	Bucket    string
+	Key       string
+	GCSBucket string
+	GCSPrefix string
+	Outputs   []string
+	Stdout    io.Writer
 }
 
 type FileWithBackend struct {
@@ -45,7 +47,21 @@ type Dir struct {
 }
 
 func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
+	bucket := &Bucket{
+		Bucket: param.Bucket,
+		Key:    param.Key,
+	}
+	if param.Bucket != "" {
+		bucket.Type = "s3"
+	}
 	// parse plan file and extract changed outputs
+	if param.GCSBucket != "" {
+		param.Bucket = param.GCSBucket
+		bucket.Type = "gcs"
+	}
+	if param.GCSPrefix != "" {
+		param.Key = param.GCSPrefix
+	}
 	if err := validateParam(param); err != nil {
 		return err
 	}
@@ -62,12 +78,7 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 		changedOutputs = arr
 	}
 
-	bucket := &Bucket{
-		Bucket: param.Bucket,
-		Key:    param.Key,
-	}
-
-	if param.PlanFile != "" {
+	if param.Bucket == "" {
 		// parse HCLs in dir and extract backend configurations
 		if err := findBackendConfig(afs, param.Dir, bucket); err != nil {
 			return err
