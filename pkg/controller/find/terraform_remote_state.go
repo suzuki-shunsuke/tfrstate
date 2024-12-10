@@ -32,7 +32,7 @@ func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backen
 		}
 		name := block.Labels[1]
 		if !bucket.Compare(backend) {
-			break
+			continue
 		}
 		states = append(states, &RemoteState{
 			Name: name,

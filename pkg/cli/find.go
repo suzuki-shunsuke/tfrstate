@@ -46,6 +46,14 @@ func (rc *findCommand) command() *cli.Command {
 				Name:  "s3-key",
 				Usage: "S3 Bucket Key of terraform_remote_state data source",
 			},
+			&cli.StringFlag{
+				Name:  "gcs-bucket",
+				Usage: "GCS Bucket Name of terraform_remote_state data source",
+			},
+			&cli.StringFlag{
+				Name:  "gcs-prefix",
+				Usage: "GCS Bucket Prefix of terraform_remote_state data source",
+			},
 			&cli.StringSliceFlag{
 				Name:    "output",
 				Usage:   "Output name of terraform_remote_state data source",
@@ -65,14 +73,16 @@ func (rc *findCommand) action(c *cli.Context) error {
 		return fmt.Errorf("get the current directory: %w", err)
 	}
 	return find.Find(c.Context, logE, fs, &find.Param{ //nolint:wrapcheck
-		Format:   c.String("output-format"),
-		PlanFile: c.String("plan-json"),
-		Root:     c.String("base-dir"),
-		Dir:      c.String("backend-dir"),
-		Key:      c.String("s3-key"),
-		Bucket:   c.String("s3-bucket"),
-		Outputs:  c.StringSlice("output"),
-		Stdout:   os.Stdout,
-		PWD:      pwd,
+		Format:    c.String("output-format"),
+		PlanFile:  c.String("plan-json"),
+		Root:      c.String("base-dir"),
+		Dir:       c.String("backend-dir"),
+		Key:       c.String("s3-key"),
+		Bucket:    c.String("s3-bucket"),
+		GCSPrefix: c.String("gcs-prefix"),
+		GCSBucket: c.String("gcs-bucket"),
+		Outputs:   c.StringSlice("output"),
+		Stdout:    os.Stdout,
+		PWD:       pwd,
 	})
 }
