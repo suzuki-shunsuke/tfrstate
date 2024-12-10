@@ -50,20 +50,15 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 	bucket := &Bucket{
 		Bucket: param.Bucket,
 		Key:    param.Key,
+		Prefix: param.GCSPrefix,
 	}
 	if param.Bucket != "" {
 		bucket.Type = "s3"
 	}
 	// parse plan file and extract changed outputs
 	if param.GCSBucket != "" {
-		param.Bucket = param.GCSBucket
+		bucket.Bucket = param.GCSBucket
 		bucket.Type = "gcs"
-	}
-	if param.GCSPrefix != "" {
-		param.Key = param.GCSPrefix
-	}
-	if err := validateParam(param); err != nil {
-		return err
 	}
 	changedOutputs := param.Outputs
 	if param.PlanFile != "" {
