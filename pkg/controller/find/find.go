@@ -53,12 +53,12 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 		Prefix: param.GCSPrefix,
 	}
 	if param.Bucket != "" {
-		bucket.Type = "s3"
+		bucket.Type = backendTypeS3
 	}
 	// parse plan file and extract changed outputs
 	if param.GCSBucket != "" {
 		bucket.Bucket = param.GCSBucket
-		bucket.Type = "gcs"
+		bucket.Type = backendTypeGCS
 	}
 	changedOutputs := param.Outputs
 	if param.PlanFile != "" {

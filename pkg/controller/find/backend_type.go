@@ -8,6 +8,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	backendTypeGCS = "gcs"
+	backendTypeS3  = "s3"
+)
+
 type Bucket struct {
 	Type   string `json:"type"`
 	Bucket string `json:"bucket"`
@@ -69,12 +74,12 @@ func extractBackendFromJSON(src []byte, bucket *Bucket) (bool, error) {
 		return false, fmt.Errorf("unmarshal *.tf.json as JSON: %w", err)
 	}
 	if bj.Terraform.Backend.S3 != nil {
-		bj.Terraform.Backend.S3.Type = "s3"
+		bj.Terraform.Backend.S3.Type = backendTypeS3
 		bj.Terraform.Backend.S3.Copy(bucket)
 		return true, nil
 	}
 	if bj.Terraform.Backend.GCS != nil {
-		bj.Terraform.Backend.S3.Type = "gcs"
+		bj.Terraform.Backend.S3.Type = backendTypeGCS
 		bj.Terraform.Backend.S3.Copy(bucket)
 		return true, nil
 	}
@@ -83,13 +88,13 @@ func extractBackendFromJSON(src []byte, bucket *Bucket) (bool, error) {
 
 func getHandlers() map[string]handleBackend {
 	return map[string]handleBackend{
-		"s3":  handleS3Backend,
-		"gcs": handleGCSBackend,
+		backendTypeS3:  handleS3Backend,
+		backendTypeGCS: handleGCSBackend,
 	}
 }
 
 func handleS3Backend(backend *hclsyntax.Block, bucket *Bucket) error {
-	bucket.Type = "s3"
+	bucket.Type = backendTypeS3
 	if key, ok := backend.Body.Attributes["key"]; ok {
 		val, diag := key.Expr.Value(nil)
 		if diag.HasErrors() {
@@ -116,7 +121,7 @@ func handleGCSBackend(backend *hclsyntax.Block, bucket *Bucket) error {
 		  }
 		}
 	*/
-	bucket.Type = "gcs"
+	bucket.Type = backendTypeGCS
 	if prefix, ok := backend.Body.Attributes["prefix"]; ok {
 		val, diag := prefix.Expr.Value(nil)
 		if diag.HasErrors() {

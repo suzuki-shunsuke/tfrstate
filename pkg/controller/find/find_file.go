@@ -13,7 +13,7 @@ func findTFFiles(afs afero.Fs, baseDir string) ([]string, error) {
 	// Find **/*.tf
 	tfFiles := []string{}
 	ignorePatterns := []string{".terraform", ".git", ".github", "vendor", "node_modules"}
-	if err := doublestar.GlobWalk(afero.NewIOFS(afs), filepath.Join(baseDir, "**/*.tf"), func(path string, d fs.DirEntry) error {
+	if err := doublestar.GlobWalk(afero.NewIOFS(afs), filepath.Join(baseDir, "**/*.tf"), func(path string, _ fs.DirEntry) error {
 		if err := ignorePath(path, ignorePatterns); err != nil {
 			return err
 		}
