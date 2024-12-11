@@ -43,6 +43,31 @@ func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backen
 	return states, nil
 }
 
+func extractRemoteStatesFromJSON(src []byte, filePath string) ([]*RemoteState, error) {
+	file := struct {
+		Data struct {
+			TerraformRemoteState map[string]struct {
+				Backend string `json:"backend"`
+				Config  Bucket `json:"config"`
+			} `json:"terraform_remote_state"`
+		} `json:"data"`
+	}{}
+	if err := json.Unmarshal(src, &file); err != nil {
+		return nil, fmt.Errorf("unmarshal JSON: %w", err)
+	}
+	if len(file.Data.TerraformRemoteState) == 0 {
+		return nil, nil
+	}
+	states := []*RemoteState{}
+	for name := range file.Data.TerraformRemoteState {
+		states = append(states, &RemoteState{
+			Name: name,
+			File: filePath,
+		})
+	}
+	return states, nil
+}
+
 func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error) {
 	/*
 		data "terraform_remote_state" "vpc" {
