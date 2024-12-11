@@ -14,12 +14,7 @@ type PlanFile struct {
 }
 
 type OutputChange struct {
-	Actions         []string `json:"actions"`
-	Before          any      `json:"before"`
-	After           any      `json:"after"`
-	AfterUnknown    bool     `json:"after_unknown"`
-	BeforeSensitive bool     `json:"before_sensitive"`
-	AfterSensitive  bool     `json:"after_sensitive"`
+	Actions []string `json:"actions"`
 }
 
 func extractChangedOutputs(afs afero.Fs, path string) ([]string, error) {
