@@ -4,6 +4,10 @@ output "foo" {
   value = "bar"
 }
 
+output "bar" {
+  value = "bar"
+}
+
 terraform {
   backend "s3" {
     bucket = "mybucket"
