@@ -11,7 +11,7 @@ USAGE:
    tfrstate [global options] command [command options]
 
 VERSION:
-   0.1.0 (0549dd6619b59190bee0774cd51a514bded56497)
+   0.1.3 (1f214deb0b902bdc407d26e06de5f26093318935)
 
 COMMANDS:
    version     Show version
@@ -43,6 +43,8 @@ OPTIONS:
    --backend-dir value                                    The file path to the given Terraform Root Module
    --s3-bucket value                                      S3 Bucket Name of terraform_remote_state data source
    --s3-key value                                         S3 Bucket Key of terraform_remote_state data source
+   --gcs-bucket value                                     GCS Bucket Name of terraform_remote_state data source
+   --gcs-prefix value                                     GCS Bucket Prefix of terraform_remote_state data source
    --output value, -o value [ --output value, -o value ]  Output name of terraform_remote_state data source
    --help, -h                                             show help
 ```
