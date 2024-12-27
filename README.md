@@ -23,6 +23,7 @@ Using this tool, you can look into the dependency, notifying to people when chan
 ## Supported Backends
 
 - [S3 Backend](https://developer.hashicorp.com/terraform/language/backend/s3)
+- [GCS Backend](https://developer.hashicorp.com/terraform/language/backend/gcs)
 
 ## How To Use
 
