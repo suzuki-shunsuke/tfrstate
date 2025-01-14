@@ -3,7 +3,7 @@ module github.com/suzuki-shunsuke/tfrstate
 go 1.23.3
 
 require (
-	github.com/bmatcuk/doublestar/v4 v4.7.1
+	github.com/bmatcuk/doublestar/v4 v4.8.0
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/mattn/go-colorable v0.1.14
 	github.com/sirupsen/logrus v1.9.3
