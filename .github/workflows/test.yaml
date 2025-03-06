@@ -5,7 +5,7 @@ permissions: {}
 jobs:
   path-filter:
     # Get changed files to filter jobs
-    timeout-minutes: 30
+    timeout-minutes: 10
     outputs:
       update-aqua-checksums: ${{steps.changes.outputs.update-aqua-checksums}}
       renovate-config-validator: ${{steps.changes.outputs.renovate-config-validator}}
@@ -33,16 +33,6 @@ jobs:
               - "**.go"
               - .github/workflows/test.yaml
               - .github/workflows/wc-go-mod-tidy.yaml
-
-  status-check:
-    uses: ./.github/workflows/wc-status-check.yaml
-    permissions: {}
-    if: failure()
-    needs:
-      - renovate-config-validator
-      - update-aqua-checksums
-      - test
-      - go-mod-tidy
 
   renovate-config-validator:
     uses: ./.github/workflows/wc-renovate-config-validator.yaml
