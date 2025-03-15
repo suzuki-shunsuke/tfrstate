@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/mattn/go-colorable v0.1.14
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/afero v1.13.0
+	github.com/spf13/afero v1.14.0
 	github.com/suzuki-shunsuke/logrus-error v0.1.4
 	github.com/urfave/cli/v2 v2.27.6
 	github.com/zclconf/go-cty v1.15.1
