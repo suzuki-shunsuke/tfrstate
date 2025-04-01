@@ -3,10 +3,9 @@ package cli
 import (
 	"context"
 	"io"
-	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 type Runner struct {
@@ -24,15 +23,10 @@ type LDFlags struct {
 }
 
 func (r *Runner) Run(ctx context.Context, args ...string) error {
-	compiledDate, err := time.Parse(time.RFC3339, r.LDFlags.Date)
-	if err != nil {
-		compiledDate = time.Now()
-	}
-	app := cli.App{
-		Name:     "tfrstate",
-		Usage:    "Find directories where a given terraform_remote_state data source is used",
-		Version:  r.LDFlags.Version + " (" + r.LDFlags.Commit + ")",
-		Compiled: compiledDate,
+	app := cli.Command{
+		Name:    "tfrstate",
+		Usage:   "Find directories where a given terraform_remote_state data source is used",
+		Version: r.LDFlags.Version + " (" + r.LDFlags.Commit + ")",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "log-level",
@@ -43,7 +37,7 @@ func (r *Runner) Run(ctx context.Context, args ...string) error {
 				Usage: "Log color. One of 'auto' (default), 'always', 'never'",
 			},
 		},
-		EnableBashCompletion: true,
+		EnableShellCompletion: true,
 		Commands: []*cli.Command{
 			(&versionCommand{
 				stdout:  r.Stdout,
@@ -60,5 +54,5 @@ func (r *Runner) Run(ctx context.Context, args ...string) error {
 		},
 	}
 
-	return app.RunContext(ctx, args) //nolint:wrapcheck
+	return app.Run(ctx, args) //nolint:wrapcheck
 }

@@ -1,11 +1,12 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 type versionCommand struct {
@@ -27,7 +28,7 @@ func (vc *versionCommand) command() *cli.Command {
 	}
 }
 
-func (vc *versionCommand) action(c *cli.Context) error {
+func (vc *versionCommand) action(_ context.Context, c *cli.Command) error {
 	if c.Bool("json") {
 		encoder := json.NewEncoder(vc.stdout)
 		encoder.SetIndent("", "  ")
