@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/suzuki-shunsuke/tfrstate/pkg/controller/find"
 	"github.com/suzuki-shunsuke/tfrstate/pkg/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 type findCommand struct {
@@ -63,7 +64,7 @@ func (rc *findCommand) command() *cli.Command {
 	}
 }
 
-func (rc *findCommand) action(c *cli.Context) error {
+func (rc *findCommand) action(ctx context.Context, c *cli.Command) error {
 	fs := afero.NewOsFs()
 	logE := rc.logE
 	log.SetLevel(c.String("log-level"), logE)
@@ -72,7 +73,7 @@ func (rc *findCommand) action(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("get the current directory: %w", err)
 	}
-	return find.Find(c.Context, logE, fs, &find.Param{ //nolint:wrapcheck
+	return find.Find(ctx, logE, fs, &find.Param{ //nolint:wrapcheck
 		Format:    c.String("output-format"),
 		PlanFile:  c.String("plan-json"),
 		Root:      c.String("base-dir"),
