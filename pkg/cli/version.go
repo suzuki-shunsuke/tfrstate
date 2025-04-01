@@ -28,7 +28,7 @@ func (vc *versionCommand) command() *cli.Command {
 	}
 }
 
-func (vc *versionCommand) action(ctx context.Context, c *cli.Command) error {
+func (vc *versionCommand) action(_ context.Context, c *cli.Command) error {
 	if c.Bool("json") {
 		encoder := json.NewEncoder(vc.stdout)
 		encoder.SetIndent("", "  ")
