@@ -131,9 +131,19 @@
       "algorithm": "sha256"
     },
     {
-      "id": "registries/github_content/github.com/aquaproj/aqua-registry/v4.262.0/registry.yaml",
-      "checksum": "6CD8EE34E893221C3AEC90877D9DC9AF969C4F2020CC96B72F7371F3CF309525980EAD787B38400E12991632A9D556CE3D043069C5BE62B99D79B632629BACB9",
-      "algorithm": "sha512"
+      "id": "github_release/github.com/suzuki-shunsuke/cmdx/v2.0.1/cmdx_windows_amd64.zip",
+      "checksum": "26BF4BAA495AF54456BACF5A16416AD5B6C756F5661ABD56E73C08CBCEAD65FE",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/suzuki-shunsuke/cmdx/v2.0.1/cmdx_windows_arm64.zip",
+      "checksum": "4BB8F4F65EDCE1D3AAE86168075B2E2CD3377E9A72E5D5F51EE097BFABE5DEE2",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "registries/github_content/github.com/aquaproj/aqua-registry/v4.338.0/registry.yaml",
+      "checksum": "BA3EA319B31877675D4CD10064A35080966CDAE2BB8B91D0FE8F80D7B276A711",
+      "algorithm": "sha256"
     }
   ]
 }
