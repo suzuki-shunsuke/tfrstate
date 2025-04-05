@@ -1,6 +1,6 @@
 module github.com/suzuki-shunsuke/tfrstate
 
-go 1.23.3
+go 1.24.2
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.8.1
@@ -9,6 +9,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.14.0
 	github.com/suzuki-shunsuke/logrus-error v0.1.4
+	github.com/suzuki-shunsuke/urfave-cli-v3-util v0.0.1
 	github.com/urfave/cli/v3 v3.1.1
 	github.com/zclconf/go-cty v1.15.1
 )
