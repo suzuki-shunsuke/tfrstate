@@ -5,6 +5,8 @@ import (
 	"io"
 
 	"github.com/sirupsen/logrus"
+	"github.com/suzuki-shunsuke/urfave-cli-v3-util/helpall"
+	"github.com/suzuki-shunsuke/urfave-cli-v3-util/vcmd"
 	"github.com/urfave/cli/v3"
 )
 
@@ -23,7 +25,7 @@ type LDFlags struct {
 }
 
 func (r *Runner) Run(ctx context.Context, args ...string) error {
-	app := cli.Command{
+	return helpall.With(&cli.Command{ //nolint:wrapcheck
 		Name:    "tfrstate",
 		Usage:   "Find directories where a given terraform_remote_state data source is used",
 		Version: r.LDFlags.Version + " (" + r.LDFlags.Commit + ")",
@@ -39,11 +41,6 @@ func (r *Runner) Run(ctx context.Context, args ...string) error {
 		},
 		EnableShellCompletion: true,
 		Commands: []*cli.Command{
-			(&versionCommand{
-				stdout:  r.Stdout,
-				version: r.LDFlags.Version,
-				commit:  r.LDFlags.Commit,
-			}).command(),
 			(&findCommand{
 				logE: r.LogE,
 			}).command(),
@@ -51,8 +48,11 @@ func (r *Runner) Run(ctx context.Context, args ...string) error {
 				logE:   r.LogE,
 				stdout: r.Stdout,
 			}).command(),
+			vcmd.New(&vcmd.Command{
+				Name:    "yodoc",
+				Version: r.LDFlags.Version,
+				SHA:     r.LDFlags.Commit,
+			}),
 		},
-	}
-
-	return app.Run(ctx, args) //nolint:wrapcheck
+	}, nil).Run(ctx, args)
 }
