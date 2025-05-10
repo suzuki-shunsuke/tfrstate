@@ -9,11 +9,14 @@ import (
 	"github.com/spf13/afero"
 )
 
-func findTFFiles(afs afero.Fs, baseDir string) ([]string, error) {
-	// Find **/*.tf
+func ignoreDirs() []string {
+	return []string{".terraform", ".git", ".github", "vendor", "node_modules"}
+}
+
+func findFiles(afs afero.Fs, baseDir string, pattern string) ([]string, error) {
 	tfFiles := []string{}
-	ignorePatterns := []string{".terraform", ".git", ".github", "vendor", "node_modules"}
-	if err := doublestar.GlobWalk(afero.NewIOFS(afs), filepath.Join(baseDir, "**/*.tf"), func(path string, _ fs.DirEntry) error {
+	ignorePatterns := ignoreDirs()
+	if err := doublestar.GlobWalk(afero.NewIOFS(afs), filepath.Join(baseDir, pattern), func(path string, d fs.DirEntry) error {
 		if err := ignorePath(path, ignorePatterns); err != nil {
 			return err
 		}
@@ -23,6 +26,14 @@ func findTFFiles(afs afero.Fs, baseDir string) ([]string, error) {
 		return nil, fmt.Errorf("search files: %w", err)
 	}
 	return tfFiles, nil
+}
+
+func findTFFiles(afs afero.Fs, baseDir string) ([]string, error) {
+	return findFiles(afs, baseDir, "**/*.tf")
+}
+
+func findTFJSONFiles(afs afero.Fs, baseDir string) ([]string, error) {
+	return findFiles(afs, baseDir, "**/*.tf.json")
 }
 
 func ignorePath(path string, ignorePatterns []string) error {

@@ -86,33 +86,23 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 	}
 	logE.WithFields(bucket.LogE()).Debug("backend configuration")
 
-	// find HCLs in base directories and list directories where changed outputs are used
-	tfFiles, err := findTFFiles(afs, param.Root)
+	dirs, err := findRemoteStatesFromTF(logE, afs, param.Root, bucket)
 	if err != nil {
 		return err
 	}
-	logE.WithFields(logrus.Fields{
-		"num_of_files": len(tfFiles),
-	}).Debug("Found *.tf files")
-	dirs := map[string]*Dir{}
-	// Find files including a string "terraform_remote_state"
-	if err := filterFilesWithRemoteState(afs, tfFiles, dirs); err != nil {
+
+	tfJSONDirs, err := findRemoteStatesFromJSON(logE, afs, param.Root)
+	if err != nil {
 		return err
 	}
-
-	// Find terraform_remote_state data sources.
-	for _, dir := range dirs {
-		for _, file := range dir.Files {
-			logE := logE.WithField("file", file.Path)
-			logE.Debug("terraform_remote_state is found")
-			remoteStates, err := extractRemoteStates(logE, file.Byte, file.Path, bucket)
-			if err != nil {
-				return fmt.Errorf("get terraform_remote_state: %w", logerr.WithFields(err, logrus.Fields{
-					"file": file.Path,
-				}))
-			}
-			dir.States = append(dir.States, remoteStates...)
+	for k, v := range tfJSONDirs {
+		a, ok := dirs[k]
+		if !ok {
+			dirs[k] = v
+			continue
 		}
+		a.Files = append(a.Files, v.Files...)
+		a.States = append(a.States, v.States...)
 	}
 
 	// Find attributes where changed outputs are used
@@ -130,6 +120,70 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 		return err
 	}
 	return nil
+}
+
+func findRemoteStatesFromTF(logE *logrus.Entry, afs afero.Fs, rootDir string, bucket *Bucket) (map[string]*Dir, error) {
+	// find HCLs in base directories and list directories where changed outputs are used
+	tfFiles, err := findTFFiles(afs, rootDir)
+	if err != nil {
+		return nil, err
+	}
+	logE.WithFields(logrus.Fields{
+		"num_of_files": len(tfFiles),
+	}).Debug("Found *.tf files")
+	dirs := map[string]*Dir{}
+	// Find files including a string "terraform_remote_state"
+	if err := filterFilesWithRemoteState(afs, tfFiles, dirs); err != nil {
+		return nil, err
+	}
+
+	// Find terraform_remote_state data sources.
+	for _, dir := range dirs {
+		for _, file := range dir.Files {
+			logE := logE.WithField("file", file.Path)
+			logE.Debug("terraform_remote_state is found")
+			remoteStates, err := extractRemoteStates(logE, file.Byte, file.Path, bucket)
+			if err != nil {
+				return nil, fmt.Errorf("get terraform_remote_state: %w", logerr.WithFields(err, logrus.Fields{
+					"file": file.Path,
+				}))
+			}
+			dir.States = append(dir.States, remoteStates...)
+		}
+	}
+	return dirs, nil
+}
+
+func findRemoteStatesFromJSON(logE *logrus.Entry, afs afero.Fs, rootDir string) (map[string]*Dir, error) {
+	// find HCLs in base directories and list directories where changed outputs are used
+	tfFiles, err := findTFJSONFiles(afs, rootDir)
+	if err != nil {
+		return nil, err
+	}
+	logE.WithFields(logrus.Fields{
+		"num_of_files": len(tfFiles),
+	}).Debug("Found *.tf.json files")
+	dirs := map[string]*Dir{}
+	// Find files including a string "terraform_remote_state"
+	if err := filterFilesWithRemoteState(afs, tfFiles, dirs); err != nil {
+		return nil, err
+	}
+
+	// Find terraform_remote_state data sources.
+	for _, dir := range dirs {
+		for _, file := range dir.Files {
+			logE := logE.WithField("file", file.Path)
+			logE.Debug("terraform_remote_state is found")
+			remoteStates, err := extractRemoteStatesFromJSON(file.Byte, file.Path)
+			if err != nil {
+				return nil, fmt.Errorf("get terraform_remote_state: %w", logerr.WithFields(err, logrus.Fields{
+					"file": file.Path,
+				}))
+			}
+			dir.States = append(dir.States, remoteStates...)
+		}
+	}
+	return dirs, nil
 }
 
 func toChanges(pwd, baseDir string, changed map[string]map[string]map[string]struct{}) ([]*Change, error) {
