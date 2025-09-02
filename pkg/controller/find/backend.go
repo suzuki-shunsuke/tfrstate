@@ -8,10 +8,12 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/suzuki-shunsuke/logrus-error/logerr"
 )
 
-func findBackendConfig(afs afero.Fs, dir string, bucket *Bucket) error {
+func findBackendConfig(logE *logrus.Entry, afs afero.Fs, dir string, bucket *Bucket) error {
 	// parse HCLs in dir and extract backend configurations
 	matchFiles, err := afero.Glob(afs, filepath.Join(dir, "*.tf"))
 	if err != nil {
@@ -27,7 +29,8 @@ func findBackendConfig(afs afero.Fs, dir string, bucket *Bucket) error {
 			continue
 		}
 		if f, err := extractBackend(b, matchFile, bucket); err != nil {
-			return fmt.Errorf("get backend configuration: %w", err)
+			logerr.WithError(logE, err).Warn("extract backend configuration")
+			continue
 		} else if f {
 			break
 		}
