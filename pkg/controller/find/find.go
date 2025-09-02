@@ -75,7 +75,7 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 
 	if bucket.Bucket == "" {
 		// parse HCLs in dir and extract backend configurations
-		if err := findBackendConfig(afs, param.Dir, bucket); err != nil {
+		if err := findBackendConfig(logE, afs, param.Dir, bucket); err != nil {
 			return err
 		}
 	}
@@ -107,9 +107,8 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 			logE.Debug("terraform_remote_state is found")
 			remoteStates, err := extractRemoteStates(logE, file.Byte, file.Path, bucket)
 			if err != nil {
-				return fmt.Errorf("get terraform_remote_state: %w", logerr.WithFields(err, logrus.Fields{
-					"file": file.Path,
-				}))
+				logerr.WithError(logE, err).Warn("extract terraform_remote_state")
+				continue
 			}
 			dir.States = append(dir.States, remoteStates...)
 		}
