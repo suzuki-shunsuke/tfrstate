@@ -14,7 +14,7 @@ There are some ways to install tfrstate.
 You can install tfrstate using [Homebrew](https://brew.sh/).
 
 ```sh
-brew install suzuki-shunsuke/tfrstate/tfrstate
+brew install --cask suzuki-shunsuke/tfrstate/tfrstate
 ```
 
 ## aqua
