@@ -47,18 +47,18 @@ func (b *Bucket) Copy(bucket *Bucket) {
 	bucket.Prefix = b.Prefix
 }
 
-/*
-	{
-	    "terraform": {
-	        "backend": {
-	            "s3": {
-	                "bucket": "",
-	                "key": ""
-	            }
-	        }
-	    }
-	}
-*/
+// BackendJSON represents the structure of a Terraform backend defined in a JSON file.
+//
+//	{
+//	    "terraform": {
+//	        "backend": {
+//	            "s3": {
+//	                "bucket": "",
+//	                "key": ""
+//	            }
+//	        }
+//	    }
+//	}
 type BackendJSON struct {
 	Terraform struct {
 		Backend struct {
