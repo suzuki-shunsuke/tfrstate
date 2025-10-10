@@ -1,6 +1,6 @@
 module github.com/suzuki-shunsuke/tfrstate
 
-go 1.25.1
+go 1.25.2
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1
