@@ -3,17 +3,18 @@ package cli
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/suzuki-shunsuke/slog-util/slogutil"
 	"github.com/suzuki-shunsuke/tfrstate/pkg/controller/find"
-	"github.com/suzuki-shunsuke/tfrstate/pkg/log"
 	"github.com/urfave/cli/v3"
 )
 
 type findCommand struct {
-	logE *logrus.Entry
+	logger      *slog.Logger
+	logLevelVar *slog.LevelVar
 }
 
 func (rc *findCommand) command() *cli.Command {
@@ -66,14 +67,15 @@ func (rc *findCommand) command() *cli.Command {
 
 func (rc *findCommand) action(ctx context.Context, c *cli.Command) error {
 	fs := afero.NewOsFs()
-	logE := rc.logE
-	log.SetLevel(c.String("log-level"), logE)
-	log.SetColor(c.String("log-color"), logE)
+	logger := rc.logger
+	if err := slogutil.SetLevel(rc.logLevelVar, c.String("log-level")); err != nil {
+		return fmt.Errorf("set log level: %w", err)
+	}
 	pwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("get the current directory: %w", err)
 	}
-	return find.Find(ctx, logE, fs, &find.Param{ //nolint:wrapcheck
+	return find.Find(ctx, logger, fs, &find.Param{ //nolint:wrapcheck
 		Format:    c.String("output-format"),
 		PlanFile:  c.String("plan-json"),
 		Root:      c.String("base-dir"),

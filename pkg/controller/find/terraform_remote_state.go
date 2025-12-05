@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/sirupsen/logrus"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
-func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backend *Bucket) ([]*RemoteState, error) {
+func extractRemoteStates(logger *slog.Logger, src []byte, filePath string, backend *Bucket) ([]*RemoteState, error) {
 	// Extract terraform_remote_state data sources matching with a given backend from a file.
 	file, diags := hclsyntax.ParseConfig(src, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 	if diags.HasErrors() {
@@ -23,7 +23,7 @@ func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backen
 	}
 	states := []*RemoteState{}
 	for _, block := range body.Blocks {
-		bucket, err := handleDataBlock(logE, block)
+		bucket, err := handleDataBlock(logger, block)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func extractRemoteStates(logE *logrus.Entry, src []byte, filePath string, backen
 	return states, nil
 }
 
-func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error) {
+func handleDataBlock(logger *slog.Logger, block *hclsyntax.Block) (*Bucket, error) {
 	/*
 		data "terraform_remote_state" "vpc" {
 		  backend = "s3"
@@ -59,10 +59,10 @@ func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error
 	if len(block.Labels) != 2 || block.Labels[0] != "terraform_remote_state" {
 		return nil, nil //nolint:nilnil
 	}
-	logE.Debug("terraform_remote_state is found")
+	logger.Debug("terraform_remote_state is found")
 	backendAttr, ok := block.Body.Attributes["backend"]
 	if !ok {
-		logE.Warn("backend attribute is not found")
+		logger.Warn("backend attribute is not found")
 		return nil, nil //nolint:nilnil
 	}
 	val, diag := backendAttr.Expr.Value(nil)
@@ -73,10 +73,10 @@ func handleDataBlock(logE *logrus.Entry, block *hclsyntax.Block) (*Bucket, error
 	bucket := &Bucket{}
 	configAttr, ok := block.Body.Attributes["config"]
 	if !ok {
-		logE.Warn("config attribute is not found")
+		logger.Warn("config attribute is not found")
 		return nil, nil //nolint:nilnil
 	}
-	logE.Debug("config attribute is found")
+	logger.Debug("config attribute is found")
 
 	configVal, diag := configAttr.Expr.Value(nil)
 	if diag.HasErrors() {

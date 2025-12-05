@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -20,20 +19,19 @@ type Bucket struct {
 	Prefix string `json:"prefix"`
 }
 
-func (b *Bucket) LogE() logrus.Fields {
-	fields := logrus.Fields{
-		"type": b.Type,
-	}
+func (b *Bucket) LogAttrs() []any {
+	attrs := make([]any, 0, 8) //nolint:mnd
+	attrs = append(attrs, "type", b.Type)
 	if b.Bucket != "" {
-		fields["bucket"] = b.Bucket
+		attrs = append(attrs, "bucket", b.Bucket)
 	}
 	if b.Key != "" {
-		fields["key"] = b.Key
+		attrs = append(attrs, "key", b.Key)
 	}
 	if b.Prefix != "" {
-		fields["prefix"] = b.Prefix
+		attrs = append(attrs, "prefix", b.Prefix)
 	}
-	return fields
+	return attrs
 }
 
 func (b *Bucket) Compare(bucket *Bucket) bool {
