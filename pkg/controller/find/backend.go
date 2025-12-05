@@ -3,17 +3,17 @@ package find
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.com/suzuki-shunsuke/logrus-error/logerr"
+	"github.com/suzuki-shunsuke/slog-error/slogerr"
 )
 
-func findBackendConfig(logE *logrus.Entry, afs afero.Fs, dir string, bucket *Bucket) error {
+func findBackendConfig(logger *slog.Logger, afs afero.Fs, dir string, bucket *Bucket) error {
 	// parse HCLs in dir and extract backend configurations
 	matchFiles, err := afero.Glob(afs, filepath.Join(dir, "*.tf"))
 	if err != nil {
@@ -29,7 +29,7 @@ func findBackendConfig(logE *logrus.Entry, afs afero.Fs, dir string, bucket *Buc
 			continue
 		}
 		if f, err := extractBackend(b, matchFile, bucket); err != nil {
-			logerr.WithError(logE, err).Warn("extract backend configuration")
+			slogerr.WithError(logger, err).Warn("extract backend configuration")
 			continue
 		} else if f {
 			break

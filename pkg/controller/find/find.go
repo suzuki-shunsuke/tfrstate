@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"maps"
 	"path/filepath"
 	"slices"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.com/suzuki-shunsuke/logrus-error/logerr"
+	"github.com/suzuki-shunsuke/slog-error/slogerr"
 )
 
 type Param struct {
@@ -46,7 +46,7 @@ type Dir struct {
 	States []*RemoteState
 }
 
-func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
+func Find(_ context.Context, logger *slog.Logger, afs afero.Fs, param *Param) error { //nolint:funlen,cyclop
 	bucket := &Bucket{
 		Bucket: param.Bucket,
 		Key:    param.Key,
@@ -67,7 +67,7 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 			return err
 		}
 		if len(arr) == 0 {
-			logE.Info("no output changes")
+			logger.Info("no output changes")
 			return nil
 		}
 		changedOutputs = arr
@@ -75,25 +75,23 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 
 	if bucket.Bucket == "" {
 		// parse HCLs in dir and extract backend configurations
-		if err := findBackendConfig(logE, afs, param.Dir, bucket); err != nil {
+		if err := findBackendConfig(logger, afs, param.Dir, bucket); err != nil {
 			return err
 		}
 	}
 
 	if bucket.Type == "" {
-		logE.Info("no backend configuration")
+		logger.Info("no backend configuration")
 		return nil
 	}
-	logE.WithFields(bucket.LogE()).Debug("backend configuration")
+	logger.Debug("backend configuration", bucket.LogAttrs()...)
 
 	// find HCLs in base directories and list directories where changed outputs are used
 	tfFiles, err := findTFFiles(afs, param.Root)
 	if err != nil {
 		return err
 	}
-	logE.WithFields(logrus.Fields{
-		"num_of_files": len(tfFiles),
-	}).Debug("Found *.tf files")
+	logger.Debug("Found *.tf files", "num_of_files", len(tfFiles))
 	dirs := map[string]*Dir{}
 	// Find files including a string "terraform_remote_state"
 	if err := filterFilesWithRemoteState(afs, tfFiles, dirs); err != nil {
@@ -103,11 +101,11 @@ func Find(_ context.Context, logE *logrus.Entry, afs afero.Fs, param *Param) err
 	// Find terraform_remote_state data sources.
 	for _, dir := range dirs {
 		for _, file := range dir.Files {
-			logE := logE.WithField("file", file.Path)
-			logE.Debug("terraform_remote_state is found")
-			remoteStates, err := extractRemoteStates(logE, file.Byte, file.Path, bucket)
+			logger := logger.With("file", file.Path)
+			logger.Debug("terraform_remote_state is found")
+			remoteStates, err := extractRemoteStates(logger, file.Byte, file.Path, bucket)
 			if err != nil {
-				logerr.WithError(logE, err).Warn("extract terraform_remote_state")
+				slogerr.WithError(logger, err).Warn("extract terraform_remote_state")
 				continue
 			}
 			dir.States = append(dir.States, remoteStates...)
@@ -177,9 +175,7 @@ func filterFilesWithRemoteState(afs afero.Fs, tfFiles []string, dirs map[string]
 		// Find files including a string "terraform_remote_state"
 		b, err := afero.ReadFile(afs, matchFile)
 		if err != nil {
-			return fmt.Errorf("read a file: %w", logerr.WithFields(err, logrus.Fields{
-				"file": matchFile,
-			}))
+			return fmt.Errorf("read a file: %w", slogerr.With(err, "file", matchFile))
 		}
 		s := string(b)
 		if !strings.Contains(s, "terraform_remote_state") {
