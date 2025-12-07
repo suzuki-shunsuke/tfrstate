@@ -3,25 +3,25 @@ package cli
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"io"
 	"os"
 
 	"github.com/spf13/afero"
 	"github.com/suzuki-shunsuke/slog-util/slogutil"
 	"github.com/suzuki-shunsuke/tfrstate/pkg/controller/find"
+	"github.com/suzuki-shunsuke/urfave-cli-v3-util/urfave"
 	"github.com/urfave/cli/v3"
 )
 
 type findCommand struct {
-	logger      *slog.Logger
-	logLevelVar *slog.LevelVar
+	Stdout io.Writer
 }
 
-func (rc *findCommand) command() *cli.Command {
+func (rc *findCommand) command(logger *slogutil.Logger) *cli.Command {
 	return &cli.Command{
 		Name:   "find",
 		Usage:  "Find directories where a given terraform_remote_state data source is used",
-		Action: rc.action,
+		Action: urfave.Action(rc.action, logger),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "output-format",
@@ -65,17 +65,16 @@ func (rc *findCommand) command() *cli.Command {
 	}
 }
 
-func (rc *findCommand) action(ctx context.Context, c *cli.Command) error {
+func (rc *findCommand) action(ctx context.Context, c *cli.Command, logger *slogutil.Logger) error {
 	fs := afero.NewOsFs()
-	logger := rc.logger
-	if err := slogutil.SetLevel(rc.logLevelVar, c.String("log-level")); err != nil {
+	if err := logger.SetLevel(c.String("log-level")); err != nil {
 		return fmt.Errorf("set log level: %w", err)
 	}
 	pwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("get the current directory: %w", err)
 	}
-	return find.Find(ctx, logger, fs, &find.Param{ //nolint:wrapcheck
+	return find.Find(ctx, logger.Logger, fs, &find.Param{ //nolint:wrapcheck
 		Format:    c.String("output-format"),
 		PlanFile:  c.String("plan-json"),
 		Root:      c.String("base-dir"),
@@ -85,7 +84,7 @@ func (rc *findCommand) action(ctx context.Context, c *cli.Command) error {
 		GCSPrefix: c.String("gcs-prefix"),
 		GCSBucket: c.String("gcs-bucket"),
 		Outputs:   c.StringSlice("output"),
-		Stdout:    os.Stdout,
+		Stdout:    rc.Stdout,
 		PWD:       pwd,
 	})
 }
