@@ -14,7 +14,7 @@ You can also create pull requests via CI to reflect changes of Output Values to 
 
 ## Overview
 
-When [Terraform Output Values](https://developer.hashicorp.com/terraform/language/values/outputs) are updated, you would want to reflect the update to Terraform Root Modules where referring those values via `terrform_remote_state` data sources.
+When [Terraform Output Values](https://developer.hashicorp.com/terraform/language/values/outputs) are updated, you would want to reflect the update to Terraform Root Modules where referring those values via `terraform_remote_state` data sources.
 Or when you remove Terraform Output Values, you would want to know which Terraform Root Modules are depending on those values.
 
 tfrstate is a CLI to find Terraform Root Modules depending on a given Terraform State via `terraform_remote_state`.

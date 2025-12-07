@@ -1,14 +1,9 @@
 ---
 name: wc-test
-on:
-  workflow_call:
-    inputs:
-      docker_is_changed:
-        required: false
-        type: boolean
+on: workflow_call
 
 jobs:
-  test:
+  integration-test:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions: {}
@@ -23,7 +18,3 @@ jobs:
         with:
           aqua_version: v2.55.2
       - run: go run ./cmd/tfrstate find -plan-json test/foo/plan.json -backend-dir test/foo -base-dir test
-      - run: go test -v ./... -race -covermode=atomic
-      - run: golangci-lint run --timeout 120s
-        env:
-          AQUA_GITHUB_TOKEN: ${{github.token}}
