@@ -26,6 +26,31 @@
       "algorithm": "sha256"
     },
     {
+      "id": "github_release/github.com/crate-ci/typos/v1.40.0/typos-v1.40.0-aarch64-apple-darwin.tar.gz",
+      "checksum": "1EA9ED6520B94D0E1148942E3EF80A997FF8DB856E1389EDAA9A5BDAFF658FA4",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/crate-ci/typos/v1.40.0/typos-v1.40.0-aarch64-unknown-linux-musl.tar.gz",
+      "checksum": "349B2C3F7C7FBA125E978DF232FAA9C5A57C33AA144F88CBC250C8C6D3E8E054",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/crate-ci/typos/v1.40.0/typos-v1.40.0-x86_64-apple-darwin.tar.gz",
+      "checksum": "51368551A37E15464438EA5C95AD29CB7239BFDEFD69EE9A9BE5FF3D45FC4D19",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/crate-ci/typos/v1.40.0/typos-v1.40.0-x86_64-pc-windows-msvc.zip",
+      "checksum": "F13426420749FAE31136E15A245C8EB144D6D3D681B3300D54D1A129999A140D",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/crate-ci/typos/v1.40.0/typos-v1.40.0-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "485405D0A92871F45EAD0703D23C04AE6969AD4A6E5799794F55EB04B9F07801",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/golangci/golangci-lint/v2.7.0/golangci-lint-2.7.0-darwin-amd64.tar.gz",
       "checksum": "B3EE2AB0F9BF100A56C00552E194C288D4DD2FAB9787A41F4B78BE7D9E7B290C",
       "algorithm": "sha256"
@@ -163,6 +188,36 @@
     {
       "id": "github_release/github.com/suzuki-shunsuke/cmdx/v2.0.2/cmdx_windows_arm64.zip",
       "checksum": "156D02F4E784E237B0661464D6FF76D6C4EFC4E01F858F8A9734364CD41BC98E",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/suzuki-shunsuke/ghalint/v1.5.4/ghalint_1.5.4_darwin_amd64.tar.gz",
+      "checksum": "BA9604B55E512447803A2AD754749A82E3048DCF27B630D2FC068F9C9AB221F2",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/suzuki-shunsuke/ghalint/v1.5.4/ghalint_1.5.4_darwin_arm64.tar.gz",
+      "checksum": "3DE0A438EBB34A88F9D6AF23FAC75B698E04597DDD7098115C2273414FF31527",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/suzuki-shunsuke/ghalint/v1.5.4/ghalint_1.5.4_linux_amd64.tar.gz",
+      "checksum": "977555B7142CC057AAD4663679772510A9ED3F1687F26F2359D18BB6B67314FE",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/suzuki-shunsuke/ghalint/v1.5.4/ghalint_1.5.4_linux_arm64.tar.gz",
+      "checksum": "9B5C41332EE0C83C36D003A95813320A41DD0BE9186C4EB1DCB119908ADBC0A6",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/suzuki-shunsuke/ghalint/v1.5.4/ghalint_1.5.4_windows_amd64.zip",
+      "checksum": "8D32A5EC2623A52A1EE5755131C6C73E5593E22B5795B1918F319C08970073E0",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/suzuki-shunsuke/ghalint/v1.5.4/ghalint_1.5.4_windows_arm64.zip",
+      "checksum": "C816F297D658E466F59BBCADC521C6F7053C2DFBA89AFBABA8D2E542AFD6A72E",
       "algorithm": "sha256"
     },
     {
