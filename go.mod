@@ -3,7 +3,7 @@ module github.com/suzuki-shunsuke/tfrstate
 go 1.25.5
 
 require (
-	github.com/bmatcuk/doublestar/v4 v4.9.1
+	github.com/bmatcuk/doublestar/v4 v4.9.2
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/spf13/afero v1.15.0
 	github.com/suzuki-shunsuke/slog-error v0.2.1
