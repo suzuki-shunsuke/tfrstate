@@ -19,33 +19,9 @@ jobs:
     secrets:
       TAKUMI_GUARD_BOT_ID: ${{secrets.TAKUMI_GUARD_BOT_ID}}
 
-  path-filter:
-    # Get changed files to filter jobs
-    timeout-minutes: 10
-    outputs:
-      renovate-config-validator: ${{steps.changes.outputs.renovate-config-validator}}
-    runs-on: ubuntu-26.04
-    permissions: {}
-    steps:
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        id: changes
-        with:
-          filters: |
-            renovate-config-validator:
-              - renovate.json5
-              - .github/workflows/test.yaml
-              - .github/workflows/wc-renovate-config-validator.yaml
-
-  renovate-config-validator:
-    uses: ./.github/workflows/wc-renovate-config-validator.yaml
-    needs: path-filter
-    if: needs.path-filter.outputs.renovate-config-validator == 'true'
-    permissions:
-      contents: read
-
   integration-test:
     uses: ./.github/workflows/wc-test.yaml
-    needs: [path-filter, gomodule]
+    needs: [gomodule]
     permissions:
       contents: read
 
