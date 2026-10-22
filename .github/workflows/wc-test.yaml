@@ -24,5 +24,5 @@ jobs:
 
       - uses: aquaproj/aqua-installer@611554c6f0137ba41c8dd15aca8bee82504ea461 # v4.1.1
         with:
-          aqua_version: v2.65.1
+          aqua_version: v2.65.2
       - run: go run ./cmd/tfrstate find -plan-json test/foo/plan.json -backend-dir test/foo -base-dir test
