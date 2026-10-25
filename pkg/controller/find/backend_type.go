@@ -96,14 +96,14 @@ func handleS3Backend(backend *hclsyntax.Block, bucket *Bucket) error {
 	if key, ok := backend.Body.Attributes["key"]; ok {
 		val, diag := key.Expr.Value(nil)
 		if diag.HasErrors() {
-			return diag
+			return fmt.Errorf("evaluate the attribute key: %w", diag)
 		}
 		bucket.Key = val.AsString()
 	}
 	if b, ok := backend.Body.Attributes["bucket"]; ok {
 		val, diag := b.Expr.Value(nil)
 		if diag.HasErrors() {
-			return diag
+			return fmt.Errorf("evaluate the attribute bucket: %w", diag)
 		}
 		bucket.Bucket = val.AsString()
 	}
@@ -123,14 +123,14 @@ func handleGCSBackend(backend *hclsyntax.Block, bucket *Bucket) error {
 	if prefix, ok := backend.Body.Attributes["prefix"]; ok {
 		val, diag := prefix.Expr.Value(nil)
 		if diag.HasErrors() {
-			return diag
+			return fmt.Errorf("evaluate the attribute prefix: %w", diag)
 		}
 		bucket.Prefix = val.AsString()
 	}
 	if b, ok := backend.Body.Attributes["bucket"]; ok {
 		val, diag := b.Expr.Value(nil)
 		if diag.HasErrors() {
-			return diag
+			return fmt.Errorf("evaluate the attribute bucket: %w", diag)
 		}
 		bucket.Bucket = val.AsString()
 	}
