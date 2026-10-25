@@ -15,7 +15,7 @@ func extractRemoteStates(logger *slog.Logger, src []byte, filePath string, backe
 	// Extract terraform_remote_state data sources matching with a given backend from a file.
 	file, diags := hclsyntax.ParseConfig(src, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 	if diags.HasErrors() {
-		return nil, diags
+		return nil, fmt.Errorf("parse HCL syntax: %w", diags)
 	}
 	body, ok := file.Body.(*hclsyntax.Body)
 	if !ok {
@@ -67,7 +67,7 @@ func handleDataBlock(logger *slog.Logger, block *hclsyntax.Block) (*Bucket, erro
 	}
 	val, diag := backendAttr.Expr.Value(nil)
 	if diag.HasErrors() {
-		return nil, diag
+		return nil, fmt.Errorf("evaluate the attribute backend: %w", diag)
 	}
 	backendType := val.AsString()
 	bucket := &Bucket{}
@@ -80,7 +80,7 @@ func handleDataBlock(logger *slog.Logger, block *hclsyntax.Block) (*Bucket, erro
 
 	configVal, diag := configAttr.Expr.Value(nil)
 	if diag.HasErrors() {
-		return nil, diag
+		return nil, fmt.Errorf("evaluate the attribute config: %w", diag)
 	}
 
 	sv := ctyjson.SimpleJSONValue{Value: configVal}
