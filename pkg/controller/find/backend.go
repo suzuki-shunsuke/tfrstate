@@ -67,7 +67,7 @@ func findBackendConfigJSON(afs afero.Fs, dir string, bucket *Bucket) error {
 func extractBackend(src []byte, filePath string, bucket *Bucket) (bool, error) {
 	file, diags := hclsyntax.ParseConfig(src, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 	if diags.HasErrors() {
-		return false, diags
+		return false, fmt.Errorf("parse HCL syntax: %w", diags)
 	}
 	body, ok := file.Body.(*hclsyntax.Body)
 	if !ok {
